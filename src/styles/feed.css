@@ -1,0 +1,53 @@
+.feed-wrapper {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+.feed-scroll {
+  height: 100%;
+  width: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+}
+
+.feed-filters {
+  position: absolute;
+  top: 56px;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  pointer-events: none;
+}
+
+.filter-chip {
+  pointer-events: auto;
+  background: rgba(20,20,20,0.55);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #ccc;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.filter-chip.active {
+  color: #0D0D0D;
+  background: linear-gradient(90deg, #FFB800, #FF5C00);
+  border-color: transparent;
+}
+
+.filter-chip.ball.active {
+  background: #00D4AA;
+}
+
+.filter-chip.music.active {
+  background: #C724F5;
+}
