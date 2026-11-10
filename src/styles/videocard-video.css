@@ -1,0 +1,19 @@
+.video-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.video-player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  cursor: pointer;
+}
+
+.video-card .video-overlay,
+.video-card .video-actions {
+  z-index: 2;
+}

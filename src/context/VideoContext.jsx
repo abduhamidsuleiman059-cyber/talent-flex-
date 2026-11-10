@@ -1,19 +1,94 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import { mockVideos } from '../data/mockVideos'
+import { saveVideoBlob, getVideoBlob, deleteVideoBlob } from '../services/videoStorage'
 
 const VideoContext = createContext()
+
+const META_KEY = 'talentflex-user-videos'
+
+const approvedMock = mockVideos.map(v => ({ ...v, status: 'approved' }))
+
+function readMeta() {
+  try {
+    return JSON.parse(localStorage.getItem(META_KEY)) || []
+  } catch {
+    return []
+  }
+}
 
 export function useVideos() {
   return useContext(VideoContext)
 }
 
 export function VideoProvider({ children }) {
-  const approvedMock = mockVideos.map(v => ({ ...v, status: 'approved' }))
   const [videos, setVideos] = useState(approvedMock)
+  const [loaded, setLoaded] = useState(false)
 
-  const addPendingVideo = (video) => {
+  // Rudisha video zilizohifadhiwa (kutoka localStorage + IndexedDB)
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      const meta = readMeta()
+      const restored = []
+      for (const m of meta) {
+        try {
+          const blob = await getVideoBlob(m.id)
+          if (blob) {
+            restored.push({ ...m, videoUrl: URL.createObjectURL(blob) })
+          }
+        } catch (err) {
+          console.error('Imeshindwa kurudisha video', m.id, err)
+        }
+      }
+      if (!cancelled) {
+        setVideos(prev => [
+          ...restored,
+          ...prev.filter(v => !restored.some(r => r.id === v.id))
+        ])
+        setLoaded(true)
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Hifadhi taarifa za video za watumiaji kila zinapobadilika
+  useEffect(() => {
+    if (!loaded) return
+    const meta = videos
+      .filter(v => v.isUser)
+      .map(v => ({
+        id: v.id,
+        username: v.username,
+        caption: v.caption,
+        category: v.category,
+        likes: v.likes,
+        comments: v.comments,
+        status: v.status,
+        isUser: true
+      }))
+    try {
+      localStorage.setItem(META_KEY, JSON.stringify(meta))
+    } catch (err) {
+      console.error('Imeshindwa kuhifadhi taarifa', err)
+    }
+  }, [videos, loaded])
+
+  const addPendingVideo = async (video) => {
+    const id = Date.now()
+    try {
+      const res = await fetch(video.videoUrl)
+      const blob = await res.blob()
+      await saveVideoBlob(id, blob)
+    } catch (err) {
+      console.error('Imeshindwa kuhifadhi video', err)
+    }
     setVideos(prev => [
-      { ...video, id: Date.now(), status: 'pending' },
+      { ...video, id, status: 'pending', isUser: true },
       ...prev
     ])
   }
@@ -24,6 +99,7 @@ export function VideoProvider({ children }) {
 
   const rejectVideo = (id) => {
     setVideos(prev => prev.map(v => v.id === id ? { ...v, status: 'rejected' } : v))
+    deleteVideoBlob(id).catch(() => {})
   }
 
   return (

@@ -1,11 +1,55 @@
+import { useEffect, useRef } from 'react'
 import '../styles/videocard.css'
+import '../styles/videocard-video.css'
 
 function VideoCard({ video }) {
+  const cardRef = useRef(null)
+  const videoRef = useRef(null)
+
   const tagColor = video.category === 'ball' ? '#00D4AA' : '#C724F5'
   const tagLabel = video.category === 'ball' ? 'Ball Skills' : 'Music & Beats'
 
+  // Video ichezwe ikiwa kwenye skrini, isimame ikitoka
+  useEffect(() => {
+    const el = videoRef.current
+    const card = cardRef.current
+    if (!el || !card) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.play().catch(() => {})
+        } else {
+          el.pause()
+        }
+      },
+      { threshold: 0.6 }
+    )
+    observer.observe(card)
+    return () => observer.disconnect()
+  }, [video.videoUrl])
+
+  // Gusa video kuwasha/kuzima sauti
+  const toggleSound = () => {
+    const el = videoRef.current
+    if (el) el.muted = !el.muted
+  }
+
   return (
-    <div className="video-card" style={{ background: video.gradient }}>
+    <div className="video-card" ref={cardRef} style={{ background: video.gradient }}>
+      {video.videoUrl && (
+        <video
+          ref={videoRef}
+          src={video.videoUrl}
+          className="video-player"
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          onClick={toggleSound}
+        />
+      )}
+
       <div className="video-overlay">
         <span className="video-tag" style={{ borderColor: tagColor, color: tagColor }}>
           {tagLabel}
