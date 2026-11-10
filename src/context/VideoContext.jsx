@@ -5,12 +5,21 @@ import { saveVideoBlob, getVideoBlob, deleteVideoBlob } from '../services/videoS
 const VideoContext = createContext()
 
 const META_KEY = 'talentflex-user-videos'
+const LIKES_KEY = 'talentflex-liked'
 
 const approvedMock = mockVideos.map(v => ({ ...v, status: 'approved' }))
 
 function readMeta() {
   try {
     return JSON.parse(localStorage.getItem(META_KEY)) || []
+  } catch {
+    return []
+  }
+}
+
+function readLiked() {
+  try {
+    return JSON.parse(localStorage.getItem(LIKES_KEY)) || []
   } catch {
     return []
   }
@@ -23,6 +32,7 @@ export function useVideos() {
 export function VideoProvider({ children }) {
   const [videos, setVideos] = useState(approvedMock)
   const [loaded, setLoaded] = useState(false)
+  const [likedIds, setLikedIds] = useState(readLiked)
 
   // Rudisha video zilizohifadhiwa (kutoka localStorage + IndexedDB)
   useEffect(() => {
@@ -78,6 +88,15 @@ export function VideoProvider({ children }) {
     }
   }, [videos, loaded])
 
+  // Hifadhi video zilizopendwa (likes)
+  useEffect(() => {
+    try {
+      localStorage.setItem(LIKES_KEY, JSON.stringify(likedIds))
+    } catch (err) {
+      console.error('Imeshindwa kuhifadhi likes', err)
+    }
+  }, [likedIds])
+
   const addPendingVideo = async (video) => {
     const id = Date.now()
     try {
@@ -102,8 +121,16 @@ export function VideoProvider({ children }) {
     deleteVideoBlob(id).catch(() => {})
   }
 
+  const toggleLike = (id) => {
+    setLikedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
   return (
-    <VideoContext.Provider value={{ videos, addPendingVideo, approveVideo, rejectVideo }}>
+    <VideoContext.Provider
+      value={{ videos, addPendingVideo, approveVideo, rejectVideo, likedIds, toggleLike }}
+    >
       {children}
     </VideoContext.Provider>
   )
