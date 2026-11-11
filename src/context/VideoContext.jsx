@@ -6,6 +6,8 @@ const VideoContext = createContext()
 
 const META_KEY = 'talentflex-user-videos'
 const LIKES_KEY = 'talentflex-liked'
+const COMMENTS_KEY = 'talentflex-comments'
+const COMMENT_LIKES_KEY = 'talentflex-liked-comments'
 
 const approvedMock = mockVideos.map(v => ({ ...v, status: 'approved' }))
 
@@ -25,6 +27,22 @@ function readLiked() {
   }
 }
 
+function readComments() {
+  try {
+    return JSON.parse(localStorage.getItem(COMMENTS_KEY)) || {}
+  } catch {
+    return {}
+  }
+}
+
+function readLikedComments() {
+  try {
+    return JSON.parse(localStorage.getItem(COMMENT_LIKES_KEY)) || []
+  } catch {
+    return []
+  }
+}
+
 export function useVideos() {
   return useContext(VideoContext)
 }
@@ -33,6 +51,8 @@ export function VideoProvider({ children }) {
   const [videos, setVideos] = useState(approvedMock)
   const [loaded, setLoaded] = useState(false)
   const [likedIds, setLikedIds] = useState(readLiked)
+  const [comments, setComments] = useState(readComments)
+  const [likedCommentIds, setLikedCommentIds] = useState(readLikedComments)
 
   // Rudisha video zilizohifadhiwa (kutoka localStorage + IndexedDB)
   useEffect(() => {
@@ -97,6 +117,24 @@ export function VideoProvider({ children }) {
     }
   }, [likedIds])
 
+  // Hifadhi maoni (comments)
+  useEffect(() => {
+    try {
+      localStorage.setItem(COMMENTS_KEY, JSON.stringify(comments))
+    } catch (err) {
+      console.error('Imeshindwa kuhifadhi maoni', err)
+    }
+  }, [comments])
+
+  // Hifadhi maoni yaliyopendwa
+  useEffect(() => {
+    try {
+      localStorage.setItem(COMMENT_LIKES_KEY, JSON.stringify(likedCommentIds))
+    } catch (err) {
+      console.error('Imeshindwa kuhifadhi likes za maoni', err)
+    }
+  }, [likedCommentIds])
+
   const addPendingVideo = async (video) => {
     const id = Date.now()
     try {
@@ -127,9 +165,57 @@ export function VideoProvider({ children }) {
     )
   }
 
+  // parentId = id ya maoni mama (kama ni jibu), replyTo = jina la unayemjibu (kama ni jibu la jibu)
+  const addComment = (videoId, text, parentId = null, replyTo = null) => {
+    const newComment = {
+      id: Date.now(),
+      username: '@wewe',
+      text,
+      createdAt: Date.now(),
+      parentId,
+      replyTo,
+      likes: 0
+    }
+    setComments(prev => ({
+      ...prev,
+      [videoId]: [newComment, ...(prev[videoId] || [])]
+    }))
+  }
+
+  // Ukifuta maoni mama, majibu yake yanafutwa pia
+  const deleteComment = (videoId, commentId) => {
+    setComments(prev => ({
+      ...prev,
+      [videoId]: (prev[videoId] || []).filter(
+        c => c.id !== commentId && c.parentId !== commentId
+      )
+    }))
+    setLikedCommentIds(prev => prev.filter(x => x !== commentId))
+  }
+
+  const toggleCommentLike = (commentId) => {
+    setLikedCommentIds(prev =>
+      prev.includes(commentId)
+        ? prev.filter(x => x !== commentId)
+        : [...prev, commentId]
+    )
+  }
+
   return (
     <VideoContext.Provider
-      value={{ videos, addPendingVideo, approveVideo, rejectVideo, likedIds, toggleLike }}
+      value={{
+        videos,
+        addPendingVideo,
+        approveVideo,
+        rejectVideo,
+        likedIds,
+        toggleLike,
+        comments,
+        addComment,
+        deleteComment,
+        likedCommentIds,
+        toggleCommentLike
+      }}
     >
       {children}
     </VideoContext.Provider>

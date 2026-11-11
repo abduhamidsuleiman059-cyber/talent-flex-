@@ -1,5 +1,6 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useVideos } from '../context/VideoContext'
+import CommentsSheet from './CommentsSheet'
 import '../styles/videocard.css'
 import '../styles/videocard-video.css'
 import '../styles/videocard-like.css'
@@ -30,7 +31,8 @@ function formatCount(n) {
 }
 
 function VideoCard({ video }) {
-  const { likedIds, toggleLike } = useVideos()
+  const { likedIds, toggleLike, comments } = useVideos()
+  const [showComments, setShowComments] = useState(false)
   const cardRef = useRef(null)
   const videoRef = useRef(null)
   const sound = useSyncExternalStore(subscribe, getSnapshot)
@@ -40,6 +42,7 @@ function VideoCard({ video }) {
 
   const liked = likedIds.includes(video.id)
   const likeCount = video.likes + (liked ? 1 : 0)
+  const commentCount = video.comments + (comments[video.id]?.length || 0)
 
   // Video ichezwe ikiwa kwenye skrini, isimame ikitoka
   useEffect(() => {
@@ -119,12 +122,18 @@ function VideoCard({ video }) {
           </svg>
           <span>{formatCount(likeCount)}</span>
         </button>
-        <button className="action-btn">
+
+        <button
+          className="action-btn"
+          onClick={() => setShowComments(true)}
+          aria-label="Fungua maoni"
+        >
           <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
             <path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2z"/>
           </svg>
-          <span>{formatCount(video.comments)}</span>
+          <span>{formatCount(commentCount)}</span>
         </button>
+
         <button className="action-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28">
             <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
@@ -156,6 +165,10 @@ function VideoCard({ video }) {
           </button>
         )}
       </div>
+
+      {showComments && (
+        <CommentsSheet video={video} onClose={() => setShowComments(false)} />
+      )}
     </div>
   )
 }
