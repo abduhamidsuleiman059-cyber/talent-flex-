@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route } from 'react-router-dom'
 import { VideoProvider } from './context/VideoContext'
 import Feed from './pages/Feed'
 import Upload from './pages/Upload'
@@ -8,7 +8,7 @@ import Navbar from './components/Navbar'
 function App() {
   return (
     <VideoProvider>
-      <BrowserRouter>
+      <HashRouter>
         <div className="app-container">
           <Routes>
             <Route path="/" element={<Feed />} />
@@ -17,7 +17,7 @@ function App() {
           </Routes>
           <Navbar />
         </div>
-      </BrowserRouter>
+      </HashRouter>
     </VideoProvider>
   )
 }

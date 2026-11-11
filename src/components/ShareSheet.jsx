@@ -67,7 +67,8 @@ function MoreIcon() {
 function ShareSheet({ video, onClose }) {
   const [copied, setCopied] = useState(false)
 
-  const link = `${window.location.origin}/?v=${video.id}`
+  // BASE_URL ni "/talent-flex-/" mtandaoni na "/" kwenye kompyuta yako
+  const link = `${window.location.origin}${import.meta.env.BASE_URL}?v=${video.id}`
   const message = `${video.username}: ${video.caption} - TalentFlex`
   const encodedLink = encodeURIComponent(link)
   const encodedMessage = encodeURIComponent(message)
