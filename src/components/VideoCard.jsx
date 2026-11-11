@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useVideos } from '../context/VideoContext'
 import CommentsSheet from './CommentsSheet'
+import ShareSheet from './ShareSheet'
 import '../styles/videocard.css'
 import '../styles/videocard-video.css'
 import '../styles/videocard-like.css'
@@ -33,6 +34,7 @@ function formatCount(n) {
 function VideoCard({ video }) {
   const { likedIds, toggleLike, comments } = useVideos()
   const [showComments, setShowComments] = useState(false)
+  const [showShare, setShowShare] = useState(false)
   const cardRef = useRef(null)
   const videoRef = useRef(null)
   const sound = useSyncExternalStore(subscribe, getSnapshot)
@@ -88,7 +90,12 @@ function VideoCard({ video }) {
   }
 
   return (
-    <div className="video-card" ref={cardRef} style={{ background: video.gradient }}>
+    <div
+      className="video-card"
+      id={`video-${video.id}`}
+      ref={cardRef}
+      style={{ background: video.gradient }}
+    >
       {video.videoUrl && (
         <video
           ref={videoRef}
@@ -134,7 +141,11 @@ function VideoCard({ video }) {
           <span>{formatCount(commentCount)}</span>
         </button>
 
-        <button className="action-btn">
+        <button
+          className="action-btn"
+          onClick={() => setShowShare(true)}
+          aria-label="Shiriki video"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28">
             <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
             <polyline points="16 6 12 2 8 6"/>
@@ -168,6 +179,10 @@ function VideoCard({ video }) {
 
       {showComments && (
         <CommentsSheet video={video} onClose={() => setShowComments(false)} />
+      )}
+
+      {showShare && (
+        <ShareSheet video={video} onClose={() => setShowShare(false)} />
       )}
     </div>
   )
