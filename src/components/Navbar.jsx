@@ -7,6 +7,8 @@ function Navbar() {
   const location = useLocation()
   const [faded, setFaded] = useState(false)
   const scrollTimeout = useRef(null)
+  const pressTimer = useRef(null)
+  const longPressed = useRef(false)
 
   useEffect(() => {
     const feedEl = document.querySelector('.feed-scroll')
@@ -23,6 +25,29 @@ function Navbar() {
     feedEl.addEventListener('scroll', handleScroll)
     return () => feedEl.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Bonyeza kwa muda mrefu kitufe cha Wasifu kufungua Admin
+  const startPress = () => {
+    longPressed.current = false
+    clearTimeout(pressTimer.current)
+    pressTimer.current = setTimeout(() => {
+      longPressed.current = true
+      navigate('/admin')
+    }, 700)
+  }
+
+  const endPress = () => {
+    clearTimeout(pressTimer.current)
+  }
+
+  const handleProfileClick = () => {
+    // Ikiwa ni bonyezo refu, Admin imeshafunguliwa tayari
+    if (longPressed.current) {
+      longPressed.current = false
+      return
+    }
+    // Bonyezo la kawaida: Wasifu bado haujajengwa
+  }
 
   return (
     <nav className={faded ? 'navbar faded' : 'navbar'}>
@@ -58,7 +83,16 @@ function Navbar() {
         <span className="nav-label">Ujumbe</span>
       </button>
 
-      <button className="nav-item">
+      <button
+        className={location.pathname === '/admin' ? 'nav-item active' : 'nav-item'}
+        onPointerDown={startPress}
+        onPointerUp={endPress}
+        onPointerLeave={endPress}
+        onPointerCancel={endPress}
+        onContextMenu={(e) => e.preventDefault()}
+        onClick={handleProfileClick}
+        style={{ WebkitTouchCallout: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+      >
         <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
           <circle cx="12" cy="8" r="4"/>
           <path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>
@@ -68,4 +102,5 @@ function Navbar() {
     </nav>
   )
 }
+
 export default Navbar
