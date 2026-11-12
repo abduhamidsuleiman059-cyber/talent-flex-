@@ -1,0 +1,60 @@
+/* ===== Marekebisho ya simu: urefu halisi (dvh) badala ya vh ===== */
+
+html,
+body,
+#root {
+  height: 100vh;
+  height: 100dvh;
+}
+
+#root .app-container {
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+}
+
+#root .feed-wrapper {
+  height: 100%;
+}
+
+#root .feed-scroll {
+  height: 100%;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root .video-card {
+  height: 100%;
+  min-height: 100%;
+  scroll-snap-stop: always;
+}
+
+/* ===== Vichupo vya juu (Zote, Ball Skills, Music & Beats) ===== */
+
+#root .feed-filters {
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  gap: 6px;
+  padding: 6px 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#root .feed-filters::-webkit-scrollbar {
+  display: none;
+}
+
+#root .filter-chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+/* ===== Navbar ya chini: ibaki chini ya skrini inayoonekana ===== */
+
+#root .navbar {
+  bottom: 0;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
