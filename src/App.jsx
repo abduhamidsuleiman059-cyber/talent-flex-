@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { VideoProvider } from './context/VideoContext'
+import { ChatProvider } from './context/ChatContext'
 import Feed from './pages/Feed'
 import Explore from './pages/Explore'
+import Messages from './pages/Messages'
+import Chat from './pages/Chat'
 import Upload from './pages/Upload'
 import Admin from './pages/Admin'
 import Navbar from './components/Navbar'
@@ -26,22 +29,26 @@ function App() {
 
   return (
     <VideoProvider>
-      {/* App inapakia wakati splash inafifia, ili video zisicheze nyuma yake */}
-      {phase !== 'show' && (
-        <HashRouter>
-          <div className="app-container">
-            <Routes>
-              <Route path="/" element={<Feed />} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/upload" element={<Upload />} />
-              <Route path="/admin" element={<Admin />} />
-            </Routes>
-            <Navbar />
-          </div>
-        </HashRouter>
-      )}
+      <ChatProvider>
+        {/* App inapakia wakati splash inafifia, ili video zisicheze nyuma yake */}
+        {phase !== 'show' && (
+          <HashRouter>
+            <div className="app-container">
+              <Routes>
+                <Route path="/" element={<Feed />} />
+                <Route path="/explore" element={<Explore />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/messages/:user" element={<Chat />} />
+                <Route path="/upload" element={<Upload />} />
+                <Route path="/admin" element={<Admin />} />
+              </Routes>
+              <Navbar />
+            </div>
+          </HashRouter>
+        )}
 
-      {phase !== 'done' && <Splash fading={phase === 'fade'} />}
+        {phase !== 'done' && <Splash fading={phase === 'fade'} />}
+      </ChatProvider>
     </VideoProvider>
   )
 }

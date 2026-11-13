@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useChat } from '../context/ChatContext'
 import '../styles/navbar.css'
+import '../styles/messages.css'
 
 function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { totalUnread } = useChat()
   const [faded, setFaded] = useState(false)
   const scrollTimeout = useRef(null)
   const pressTimer = useRef(null)
@@ -50,6 +53,11 @@ function Navbar() {
     // Bonyezo la kawaida: Wasifu bado haujajengwa
   }
 
+  // Navbar ijifiche ndani ya mazungumzo ili kisanduku cha kuandika kikae chini
+  if (location.pathname.startsWith('/messages/')) return null
+
+  const onMessages = location.pathname.startsWith('/messages')
+
   return (
     <nav className={faded ? 'navbar faded' : 'navbar'}>
       <button
@@ -80,10 +88,16 @@ function Navbar() {
         </svg>
       </button>
 
-      <button className="nav-item">
+      <button
+        className={onMessages ? 'nav-item has-badge active' : 'nav-item has-badge'}
+        onClick={() => navigate('/messages')}
+      >
         <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
           <path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2z"/>
         </svg>
+        {totalUnread > 0 && (
+          <span className="nav-badge">{totalUnread > 9 ? '9+' : totalUnread}</span>
+        )}
         <span className="nav-label">Ujumbe</span>
       </button>
 
