@@ -8,6 +8,7 @@ const META_KEY = 'talentflex-user-videos'
 const LIKES_KEY = 'talentflex-liked'
 const COMMENTS_KEY = 'talentflex-comments'
 const COMMENT_LIKES_KEY = 'talentflex-liked-comments'
+const FOLLOW_KEY = 'talentflex-following'
 
 const approvedMock = mockVideos.map(v => ({ ...v, status: 'approved' }))
 
@@ -43,6 +44,14 @@ function readLikedComments() {
   }
 }
 
+function readFollowing() {
+  try {
+    return JSON.parse(localStorage.getItem(FOLLOW_KEY)) || []
+  } catch {
+    return []
+  }
+}
+
 export function useVideos() {
   return useContext(VideoContext)
 }
@@ -53,6 +62,7 @@ export function VideoProvider({ children }) {
   const [likedIds, setLikedIds] = useState(readLiked)
   const [comments, setComments] = useState(readComments)
   const [likedCommentIds, setLikedCommentIds] = useState(readLikedComments)
+  const [followedUsers, setFollowedUsers] = useState(readFollowing)
 
   // Rudisha video zilizohifadhiwa (kutoka localStorage + IndexedDB)
   useEffect(() => {
@@ -135,6 +145,15 @@ export function VideoProvider({ children }) {
     }
   }, [likedCommentIds])
 
+  // Hifadhi watumiaji unaowafuata
+  useEffect(() => {
+    try {
+      localStorage.setItem(FOLLOW_KEY, JSON.stringify(followedUsers))
+    } catch (err) {
+      console.error('Imeshindwa kuhifadhi unaowafuata', err)
+    }
+  }, [followedUsers])
+
   const addPendingVideo = async (video) => {
     const id = Date.now()
     try {
@@ -201,6 +220,15 @@ export function VideoProvider({ children }) {
     )
   }
 
+  // Fuata / acha kufuata mtumiaji (kwa jina lake, mfano "@juma_baller")
+  const toggleFollow = (username) => {
+    setFollowedUsers(prev =>
+      prev.includes(username)
+        ? prev.filter(x => x !== username)
+        : [...prev, username]
+    )
+  }
+
   return (
     <VideoContext.Provider
       value={{
@@ -214,7 +242,9 @@ export function VideoProvider({ children }) {
         addComment,
         deleteComment,
         likedCommentIds,
-        toggleCommentLike
+        toggleCommentLike,
+        followedUsers,
+        toggleFollow
       }}
     >
       {children}

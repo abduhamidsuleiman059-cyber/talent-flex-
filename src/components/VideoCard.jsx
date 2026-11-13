@@ -6,6 +6,31 @@ import '../styles/videocard.css'
 import '../styles/videocard-video.css'
 import '../styles/videocard-like.css'
 import '../styles/videocard-sound.css'
+import '../styles/avatar.css'
+
+const ME = '@wewe'
+
+// Rangi za avatar, kila jina linapata rangi yake ile ile kila mara
+const AVATAR_COLORS = [
+  'linear-gradient(135deg, #ff9a1f, #ff5e3a)',
+  'linear-gradient(135deg, #22d3ee, #3b82f6)',
+  'linear-gradient(135deg, #a855f7, #ec4899)',
+  'linear-gradient(135deg, #10b981, #06b6d4)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #6366f1, #8b5cf6)'
+]
+
+function avatarGradient(username) {
+  let hash = 0
+  for (let i = 0; i < username.length; i++) {
+    hash = (hash * 31 + username.charCodeAt(i)) >>> 0
+  }
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
+}
+
+function avatarLetter(username) {
+  return username.replace('@', '').charAt(0).toUpperCase() || '?'
+}
 
 // Hali ya sauti inayoshirikiwa na kadi zote
 let soundOn = true
@@ -32,11 +57,13 @@ function formatCount(n) {
 }
 
 function VideoCard({ video }) {
-  const { likedIds, toggleLike, comments } = useVideos()
+  const { likedIds, toggleLike, comments, followedUsers, toggleFollow } = useVideos()
   const [showComments, setShowComments] = useState(false)
   const [showShare, setShowShare] = useState(false)
+  const [showCheck, setShowCheck] = useState(false)
   const cardRef = useRef(null)
   const videoRef = useRef(null)
+  const checkTimer = useRef(null)
   const sound = useSyncExternalStore(subscribe, getSnapshot)
 
   const tagColor = video.category === 'ball' ? '#00D4AA' : '#C724F5'
@@ -45,6 +72,23 @@ function VideoCard({ video }) {
   const liked = likedIds.includes(video.id)
   const likeCount = video.likes + (liked ? 1 : 0)
   const commentCount = video.comments + (comments[video.id]?.length || 0)
+
+  const isMine = video.username === ME
+  const following = followedUsers.includes(video.username)
+  const showBadge = !isMine && (!following || showCheck)
+
+  // Safisha timer ya tiki kadi ikiondoka
+  useEffect(() => {
+    return () => clearTimeout(checkTimer.current)
+  }, [])
+
+  const handleFollow = () => {
+    if (following) return
+    toggleFollow(video.username)
+    setShowCheck(true)
+    clearTimeout(checkTimer.current)
+    checkTimer.current = setTimeout(() => setShowCheck(false), 1200)
+  }
 
   // Video ichezwe ikiwa kwenye skrini, isimame ikitoka
   useEffect(() => {
@@ -119,6 +163,34 @@ function VideoCard({ video }) {
       </div>
 
       <div className="video-actions">
+        <div className="avatar-wrap">
+          <div
+            className="avatar-circle"
+            style={{ background: avatarGradient(video.username) }}
+          >
+            {avatarLetter(video.username)}
+          </div>
+
+          {showBadge && (
+            <button
+              className={following ? 'follow-badge done' : 'follow-badge'}
+              onClick={handleFollow}
+              aria-label={following ? 'Unamfuata' : 'Mfuate'}
+            >
+              {following ? (
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
+
         <button
           className={liked ? 'action-btn liked' : 'action-btn'}
           onClick={() => toggleLike(video.id)}
