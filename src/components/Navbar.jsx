@@ -50,13 +50,15 @@ function Navbar() {
       longPressed.current = false
       return
     }
-    // Bonyezo la kawaida: Wasifu bado haujajengwa
+    navigate('/profile')
   }
 
   // Navbar ijifiche ndani ya mazungumzo ili kisanduku cha kuandika kikae chini
   if (location.pathname.startsWith('/messages/')) return null
 
   const onMessages = location.pathname.startsWith('/messages')
+  const onProfile =
+    location.pathname === '/profile' || location.pathname === '/admin'
 
   return (
     <nav className={faded ? 'navbar faded' : 'navbar'}>
@@ -102,7 +104,7 @@ function Navbar() {
       </button>
 
       <button
-        className={location.pathname === '/admin' ? 'nav-item active' : 'nav-item'}
+        className={onProfile ? 'nav-item active' : 'nav-item'}
         onPointerDown={startPress}
         onPointerUp={endPress}
         onPointerLeave={endPress}

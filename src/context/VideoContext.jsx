@@ -178,6 +178,18 @@ export function VideoProvider({ children }) {
     deleteVideoBlob(id).catch(() => {})
   }
 
+  // Futa video kabisa (pamoja na maoni na like zake)
+  const deleteVideo = (id) => {
+    setVideos(prev => prev.filter(v => v.id !== id))
+    deleteVideoBlob(id).catch(() => {})
+    setComments(prev => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+    setLikedIds(prev => prev.filter(x => x !== id))
+  }
+
   const toggleLike = (id) => {
     setLikedIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
@@ -236,6 +248,7 @@ export function VideoProvider({ children }) {
         addPendingVideo,
         approveVideo,
         rejectVideo,
+        deleteVideo,
         likedIds,
         toggleLike,
         comments,

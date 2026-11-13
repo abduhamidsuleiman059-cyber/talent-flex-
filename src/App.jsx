@@ -6,6 +6,7 @@ import Feed from './pages/Feed'
 import Explore from './pages/Explore'
 import Messages from './pages/Messages'
 import Chat from './pages/Chat'
+import Profile from './pages/Profile'
 import Upload from './pages/Upload'
 import Admin from './pages/Admin'
 import Navbar from './components/Navbar'
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/messages/:user" element={<Chat />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="/upload" element={<Upload />} />
                 <Route path="/admin" element={<Admin />} />
               </Routes>
