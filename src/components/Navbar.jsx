@@ -10,6 +10,7 @@ function Navbar() {
   const pressTimer = useRef(null)
   const longPressed = useRef(false)
 
+  // Inasikiliza scroll ya Feed kila ukurasa unapobadilika
   useEffect(() => {
     const feedEl = document.querySelector('.feed-scroll')
     if (!feedEl) return
@@ -24,7 +25,7 @@ function Navbar() {
 
     feedEl.addEventListener('scroll', handleScroll)
     return () => feedEl.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [location.pathname])
 
   // Bonyeza kwa muda mrefu kitufe cha Wasifu kufungua Admin
   const startPress = () => {
@@ -61,7 +62,10 @@ function Navbar() {
         <span className="nav-label">Feed</span>
       </button>
 
-      <button className="nav-item">
+      <button
+        className={location.pathname === '/explore' ? 'nav-item active' : 'nav-item'}
+        onClick={() => navigate('/explore')}
+      >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
           <circle cx="11" cy="11" r="7"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>

@@ -1,0 +1,253 @@
+.explore-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 12px
+    calc(84px + env(safe-area-inset-bottom, 0px));
+  background: #0d0d0d;
+}
+
+.explore-title {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+/* ===== Kutafuta ===== */
+
+.explore-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.explore-search-icon {
+  position: absolute;
+  left: 14px;
+  display: flex;
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+.explore-search-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 40px 0 42px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+}
+
+.explore-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.explore-search-input:focus {
+  border-color: #ffb800;
+}
+
+.explore-search-clear {
+  position: absolute;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+}
+
+/* ===== Vichupo vya kategoria ===== */
+
+.explore-chips {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.explore-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.explore-chip {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ccc;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.explore-chip.active {
+  border-color: transparent;
+  background: linear-gradient(90deg, #ffb800, #ff5c00);
+  color: #0d0d0d;
+}
+
+.explore-chip.ball.active {
+  background: #00d4aa;
+}
+
+.explore-chip.music.active {
+  background: #c724f5;
+  color: #fff;
+}
+
+.explore-heading {
+  margin: 16px 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== Gridi ya video ===== */
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.explore-tile {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.explore-tile:active {
+  transform: scale(0.97);
+}
+
+.explore-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.explore-glyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.explore-tile-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.65), transparent 55%);
+}
+
+.explore-tile-info {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.explore-tile-user {
+  font-size: 13px;
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explore-tile-likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* ===== Hakuna matokeo ===== */
+
+.explore-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 50px 20px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+.explore-empty p {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.explore-empty span {
+  font-size: 13px;
+}
+
+/* ===== Video ikifunguliwa skrini nzima ===== */
+
+.explore-viewer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: #0d0d0d;
+}
+
+.explore-viewer-card {
+  height: 100%;
+  width: 100%;
+}
+
+.explore-back {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 12px;
+  z-index: 60;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background: rgba(20, 20, 20, 0.55);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.explore-back:active {
+  transform: scale(0.92);
+}

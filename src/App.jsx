@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { VideoProvider } from './context/VideoContext'
 import Feed from './pages/Feed'
+import Explore from './pages/Explore'
 import Upload from './pages/Upload'
 import Admin from './pages/Admin'
 import Navbar from './components/Navbar'
@@ -31,6 +32,7 @@ function App() {
           <div className="app-container">
             <Routes>
               <Route path="/" element={<Feed />} />
+              <Route path="/explore" element={<Explore />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/admin" element={<Admin />} />
             </Routes>
