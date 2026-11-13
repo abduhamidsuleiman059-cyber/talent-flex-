@@ -7,6 +7,7 @@ import '../styles/videocard-video.css'
 import '../styles/videocard-like.css'
 import '../styles/videocard-sound.css'
 import '../styles/avatar.css'
+import '../styles/videocard-playpause.css'
 
 const ME = '@wewe'
 
@@ -61,9 +62,12 @@ function VideoCard({ video }) {
   const [showComments, setShowComments] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [showCheck, setShowCheck] = useState(false)
+  // Ikoni ya katikati: 'play' (imesimama) | 'pause' (inaendelea, inapotea) | null
+  const [indicator, setIndicator] = useState(null)
   const cardRef = useRef(null)
   const videoRef = useRef(null)
   const checkTimer = useRef(null)
+  const indicatorTimer = useRef(null)
   const sound = useSyncExternalStore(subscribe, getSnapshot)
 
   const tagColor = video.category === 'ball' ? '#00D4AA' : '#C724F5'
@@ -77,9 +81,12 @@ function VideoCard({ video }) {
   const following = followedUsers.includes(video.username)
   const showBadge = !isMine && (!following || showCheck)
 
-  // Safisha timer ya tiki kadi ikiondoka
+  // Safisha timer kadi ikiondoka
   useEffect(() => {
-    return () => clearTimeout(checkTimer.current)
+    return () => {
+      clearTimeout(checkTimer.current)
+      clearTimeout(indicatorTimer.current)
+    }
   }, [])
 
   const handleFollow = () => {
@@ -108,6 +115,8 @@ function VideoCard({ video }) {
           })
         } else {
           el.pause()
+          clearTimeout(indicatorTimer.current)
+          setIndicator(null)
         }
       },
       { threshold: 0.6 }
@@ -122,14 +131,29 @@ function VideoCard({ video }) {
     if (el) el.muted = !sound
   }, [sound])
 
-  // Gusa video kuwasha/kuzima sauti
+  // Gusa video: simamisha / endelea
+  const togglePlay = () => {
+    const el = videoRef.current
+    if (!el) return
+    clearTimeout(indicatorTimer.current)
+
+    if (el.paused) {
+      el.play().catch(() => {})
+      setIndicator('pause')
+      indicatorTimer.current = setTimeout(() => setIndicator(null), 600)
+    } else {
+      el.pause()
+      setIndicator('play')
+    }
+  }
+
+  // Kitufe cha spika: washa / zima sauti
   const toggleSound = () => {
     const el = videoRef.current
     const next = !getSnapshot()
     setSound(next)
     if (el) {
       el.muted = !next
-      if (el.paused) el.play().catch(() => {})
     }
   }
 
@@ -148,8 +172,23 @@ function VideoCard({ video }) {
           loop
           playsInline
           preload="metadata"
-          onClick={toggleSound}
+          onClick={togglePlay}
         />
+      )}
+
+      {indicator && (
+        <div className={`play-indicator ${indicator}`} key={indicator}>
+          {indicator === 'play' ? (
+            <svg viewBox="0 0 24 24" width="38" height="38" fill="currentColor">
+              <polygon points="7 4 20 12 7 20 7 4" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
+              <rect x="6" y="4" width="4.5" height="16" rx="1.2" />
+              <rect x="13.5" y="4" width="4.5" height="16" rx="1.2" />
+            </svg>
+          )}
+        </div>
       )}
 
       <div className="video-overlay">

@@ -1,0 +1,55 @@
+/* Maandishi ya chini yasizuie kugusa video */
+#root .video-card .video-overlay {
+  pointer-events: none;
+}
+
+.play-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Video imesimama: ▶ inabaki hadi uguse tena */
+.play-indicator.play {
+  animation: indicator-pop 0.2s ease both;
+}
+
+/* Video inaendelea: ⏸ inaonekana kwa muda mfupi */
+.play-indicator.pause {
+  animation: indicator-flash 0.6s ease forwards;
+}
+
+@keyframes indicator-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes indicator-flash {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.25);
+  }
+}
