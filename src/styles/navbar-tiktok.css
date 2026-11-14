@@ -1,0 +1,45 @@
+#root .app-container .navbar {
+  height: calc(62px + env(safe-area-inset-bottom, 0px));
+  padding: 0 4px env(safe-area-inset-bottom, 0px);
+  background: #000;
+  border-top: none;
+  justify-content: space-between;
+}
+
+#root .app-container .navbar .nav-item {
+  flex: 1;
+  gap: 3px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 700;
+  transition: color 0.2s ease;
+}
+
+#root .app-container .navbar .nav-item.active {
+  color: #fff;
+}
+
+#root .app-container .navbar .nav-item svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Kitufe cha + chenye ukingo wa rangi mbili, kama TikTok */
+#root .app-container .navbar .nav-upload {
+  flex-shrink: 0;
+  width: 44px;
+  height: 31px;
+  margin: 0 12px;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: -4px 0 0 #25f4ee, 4px 0 0 #fe2c55;
+}
+
+#root .app-container .navbar .nav-upload:active {
+  transform: scale(0.94);
+}
+
+#root .app-container .navbar .nav-upload svg {
+  width: 20px;
+  height: 20px;
+}

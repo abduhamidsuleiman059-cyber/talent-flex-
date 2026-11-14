@@ -1,0 +1,45 @@
+.friends-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 14px
+    calc(84px + env(safe-area-inset-bottom, 0px));
+  background: #0d0d0d;
+}
+
+.friends-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.friends-heading {
+  margin: 20px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.friends-empty {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.follow-add {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 17px;
+  background: linear-gradient(90deg, #ffb800, #ff5c00);
+  color: #0d0d0d;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.follow-add:active {
+  transform: scale(0.95);
+}

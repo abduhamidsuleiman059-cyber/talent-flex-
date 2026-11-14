@@ -3,6 +3,15 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useChat } from '../context/ChatContext'
 import '../styles/navbar.css'
 import '../styles/messages.css'
+import '../styles/navbar-tiktok.css'
+
+// Majina ya chini ya ikoni. Badilisha hapa ukitaka Kiswahili (mfano Nyumbani, Marafiki, Ujumbe, Wasifu)
+const LABELS = {
+  home: 'Home',
+  friends: 'Friends',
+  inbox: 'Inbox',
+  profile: 'Profile'
+}
 
 function Navbar() {
   const navigate = useNavigate()
@@ -30,7 +39,7 @@ function Navbar() {
     return () => feedEl.removeEventListener('scroll', handleScroll)
   }, [location.pathname])
 
-  // Bonyeza kwa muda mrefu kitufe cha Wasifu kufungua Admin
+  // Bonyeza kwa muda mrefu kitufe cha Profile kufungua Admin
   const startPress = () => {
     longPressed.current = false
     clearTimeout(pressTimer.current)
@@ -56,51 +65,56 @@ function Navbar() {
   // Navbar ijifiche ndani ya mazungumzo ili kisanduku cha kuandika kikae chini
   if (location.pathname.startsWith('/messages/')) return null
 
-  const onMessages = location.pathname.startsWith('/messages')
-  const onProfile =
-    location.pathname === '/profile' || location.pathname === '/admin'
+  const path = location.pathname
+  const onHome = path === '/'
+  const onFriends = path === '/friends'
+  const onInbox = path.startsWith('/messages')
+  const onProfile = path === '/profile' || path === '/admin'
 
   return (
     <nav className={faded ? 'navbar faded' : 'navbar'}>
       <button
-        className={location.pathname === '/' ? 'nav-item active' : 'nav-item'}
+        className={onHome ? 'nav-item active' : 'nav-item'}
         onClick={() => navigate('/')}
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-          <path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/>
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2.8L3 10.2V21h6.5v-6.2h5V21H21V10.2L12 2.8z" />
         </svg>
-        <span className="nav-label">Feed</span>
+        <span className="nav-label">{LABELS.home}</span>
       </button>
 
       <button
-        className={location.pathname === '/explore' ? 'nav-item active' : 'nav-item'}
-        onClick={() => navigate('/explore')}
+        className={onFriends ? 'nav-item active' : 'nav-item'}
+        onClick={() => navigate('/friends')}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
-          <circle cx="11" cy="11" r="7"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="9" cy="8" r="3.5" />
+          <path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6" />
+          <circle cx="17.5" cy="9" r="2.5" />
+          <path d="M17.5 14c2.5 0 4.5 1.7 4.5 4.5" />
         </svg>
-        <span className="nav-label">Gundua</span>
+        <span className="nav-label">{LABELS.friends}</span>
       </button>
 
-      <button className="nav-upload" onClick={() => navigate('/upload')}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth="2.5" width="22" height="22">
-          <line x1="12" y1="5" x2="12" y2="19"/>
-          <line x1="5" y1="12" x2="19" y2="12"/>
+      <button className="nav-upload" onClick={() => navigate('/upload')} aria-label="Pakia video">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.8" strokeLinecap="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </button>
 
       <button
-        className={onMessages ? 'nav-item has-badge active' : 'nav-item has-badge'}
+        className={onInbox ? 'nav-item has-badge active' : 'nav-item has-badge'}
         onClick={() => navigate('/messages')}
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-          <path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2z"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12a8 8 0 0 1-11.6 7.1L3 20.5l1.5-4.7A8 8 0 1 1 21 12z" />
+          <line x1="8.5" y1="12" x2="15.5" y2="12" />
         </svg>
         {totalUnread > 0 && (
           <span className="nav-badge">{totalUnread > 9 ? '9+' : totalUnread}</span>
         )}
-        <span className="nav-label">Ujumbe</span>
+        <span className="nav-label">{LABELS.inbox}</span>
       </button>
 
       <button
@@ -113,11 +127,11 @@ function Navbar() {
         onClick={handleProfileClick}
         style={{ WebkitTouchCallout: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-          <circle cx="12" cy="8" r="4"/>
-          <path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
         </svg>
-        <span className="nav-label">Wasifu</span>
+        <span className="nav-label">{LABELS.profile}</span>
       </button>
     </nav>
   )

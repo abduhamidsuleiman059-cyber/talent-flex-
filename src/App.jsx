@@ -4,6 +4,7 @@ import { VideoProvider } from './context/VideoContext'
 import { ChatProvider } from './context/ChatContext'
 import Feed from './pages/Feed'
 import Explore from './pages/Explore'
+import Friends from './pages/Friends'
 import Messages from './pages/Messages'
 import Chat from './pages/Chat'
 import Profile from './pages/Profile'
@@ -38,6 +39,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Feed />} />
                 <Route path="/explore" element={<Explore />} />
+                <Route path="/friends" element={<Friends />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/messages/:user" element={<Chat />} />
                 <Route path="/profile" element={<Profile />} />
