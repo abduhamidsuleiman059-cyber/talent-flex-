@@ -1,0 +1,15 @@
+/* Safu ya picha na takwimu isizuie mguso kwenye kamera ya background */
+#root .pf-head {
+  pointer-events: none;
+}
+
+/* Kitu kinachotakiwa kuguswa kinabaki kinafanya kazi */
+#root .pf-head .pf-avatar-wrap {
+  pointer-events: auto;
+}
+
+/* Kamera ya background iwe juu ya kila kitu */
+#root .pf-cover .pf-cover-edit,
+#root .pf-cover .pf-settings {
+  z-index: 5;
+}
