@@ -8,6 +8,7 @@ import Friends from './pages/Friends'
 import Messages from './pages/Messages'
 import Chat from './pages/Chat'
 import Profile from './pages/Profile'
+import Settings from './pages/Settings'
 import Upload from './pages/Upload'
 import Admin from './pages/Admin'
 import Navbar from './components/Navbar'
@@ -43,6 +44,7 @@ function App() {
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/messages/:user" element={<Chat />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/settings" element={<Settings />} />
                 <Route path="/upload" element={<Upload />} />
                 <Route path="/admin" element={<Admin />} />
               </Routes>

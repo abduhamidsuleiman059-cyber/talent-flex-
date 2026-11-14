@@ -1,25 +1,63 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
 import VideoCard from '../components/VideoCard'
 import { avatarGradient, avatarLetter } from '../utils/avatar'
 import '../styles/explore.css'
 import '../styles/profile.css'
+import '../styles/profile-cover.css'
 
 const ME = '@wewe'
 const PROFILE_KEY = 'talentflex-profile'
-const DEFAULT_PROFILE = { name: 'Wewe', bio: '' }
+const DEFAULT_PROFILE = { name: 'Wewe', bio: '', avatar: '', cover: '' }
 
 function readProfile() {
   try {
     const raw = JSON.parse(localStorage.getItem(PROFILE_KEY))
     if (raw && typeof raw.name === 'string') {
-      return { name: raw.name, bio: raw.bio || '' }
+      return {
+        name: raw.name,
+        bio: raw.bio || '',
+        avatar: raw.avatar || '',
+        cover: raw.cover || ''
+      }
     }
   } catch {
     // tumia chaguo-msingi
   }
   return DEFAULT_PROFILE
+}
+
+// Kata picha katikati kwa ukubwa unaotakiwa na uipunguze (ili ihifadhike kwa urahisi)
+function cropToDataUrl(file, outW, outH, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+
+    img.onload = () => {
+      const scale = Math.max(outW / img.width, outH / img.height)
+      const w = img.width * scale
+      const h = img.height * scale
+
+      const canvas = document.createElement('canvas')
+      canvas.width = outW
+      canvas.height = outH
+      const ctx = canvas.getContext('2d')
+      ctx.fillStyle = '#0d0d0d'
+      ctx.fillRect(0, 0, outW, outH)
+      ctx.drawImage(img, (outW - w) / 2, (outH - h) / 2, w, h)
+
+      URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('IMAGE_FAILED'))
+    }
+
+    img.src = url
+  })
 }
 
 function formatCount(n) {
@@ -44,22 +82,28 @@ function BackIcon() {
   )
 }
 
-function TrashIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
-      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-    </svg>
-  )
-}
-
 function ChatIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2z" />
+    </svg>
+  )
+}
+
+function CameraIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  )
+}
+
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   )
 }
@@ -119,7 +163,7 @@ function CategoryGlyph({ category }) {
 
 function Profile() {
   const navigate = useNavigate()
-  const { videos, likedIds, followedUsers, toggleFollow, deleteVideo } = useVideos()
+  const { videos, likedIds, followedUsers, toggleFollow } = useVideos()
 
   const [profile, setProfile] = useState(readProfile)
   const [editing, setEditing] = useState(false)
@@ -127,6 +171,10 @@ function Profile() {
   const [draftBio, setDraftBio] = useState('')
   const [tab, setTab] = useState('mine')
   const [selectedId, setSelectedId] = useState(null)
+  const [imgError, setImgError] = useState('')
+
+  const avatarInput = useRef(null)
+  const coverInput = useRef(null)
 
   const myVideos = videos.filter(v => v.username === ME)
   const likedVideos = videos.filter(
@@ -149,6 +197,19 @@ function Profile() {
     return () => window.removeEventListener('keydown', onKey)
   }, [selected])
 
+  // Hifadhi wasifu (inarudisha true ikifanikiwa)
+  const persist = (next) => {
+    try {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(next))
+      setProfile(next)
+      return true
+    } catch (err) {
+      console.error('Imeshindwa kuhifadhi wasifu', err)
+      setImgError('Imeshindwa kuhifadhi. Nafasi ya kivinjari inaweza kuwa imejaa.')
+      return false
+    }
+  }
+
   const startEdit = () => {
     setDraftName(profile.name)
     setDraftBio(profile.bio)
@@ -158,26 +219,38 @@ function Profile() {
   const saveEdit = (e) => {
     e.preventDefault()
     const next = {
+      ...profile,
       name: draftName.trim() || DEFAULT_PROFILE.name,
       bio: draftBio.trim()
     }
-    setProfile(next)
-    try {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(next))
-    } catch (err) {
-      console.error('Imeshindwa kuhifadhi wasifu', err)
+    if (persist(next)) setEditing(false)
+  }
+
+  // kind = 'avatar' au 'cover'
+  const handlePick = async (kind, e) => {
+    const file = e.target.files && e.target.files[0]
+    e.target.value = ''
+    if (!file) return
+
+    setImgError('')
+
+    if (!file.type.startsWith('image/')) {
+      setImgError('Chagua picha (JPG au PNG).')
+      return
     }
-    setEditing(false)
+
+    try {
+      const dataUrl =
+        kind === 'avatar'
+          ? await cropToDataUrl(file, 320, 320)
+          : await cropToDataUrl(file, 960, 480)
+      persist({ ...profile, [kind]: dataUrl })
+    } catch {
+      setImgError('Imeshindwa kusoma picha hii. Jaribu nyingine.')
+    }
   }
 
-  const handleDelete = (id) => {
-    const ok = window.confirm('Futa video hii? Hatua hii haiwezi kurudishwa.')
-    if (!ok) return
-    deleteVideo(id)
-    if (selectedId === id) setSelectedId(null)
-  }
-
-  const renderTile = (video, canDelete) => (
+  const renderTile = (video) => (
     <div className="profile-tile-wrap" key={video.id}>
       <button
         className="explore-tile"
@@ -216,16 +289,6 @@ function Profile() {
           </span>
         </span>
       </button>
-
-      {canDelete && (
-        <button
-          className="tile-delete"
-          onClick={() => handleDelete(video.id)}
-          aria-label="Futa video"
-        >
-          <TrashIcon />
-        </button>
-      )}
     </div>
   )
 
@@ -236,187 +299,247 @@ function Profile() {
 
   return (
     <>
-      <div className="profile-wrapper">
-        {/* ===== Juu: picha, jina na bio ===== */}
-        <div className="profile-top">
-          <div
-            className="profile-avatar"
-            style={{ background: avatarGradient(ME) }}
+      <div className="pf-wrapper">
+        {/* ===== Background ===== */}
+        <div
+          className="pf-cover"
+          style={profile.cover ? { backgroundImage: `url(${profile.cover})` } : undefined}
+        >
+          <button
+            className="pf-round-btn pf-settings"
+            onClick={() => navigate('/settings')}
+            aria-label="Mipangilio"
           >
-            {avatarLetter(profile.name)}
-          </div>
+            <GearIcon />
+          </button>
 
-          <h2 className="profile-name">{profile.name}</h2>
-          <span className="profile-handle">{ME}</span>
-
-          {profile.bio ? (
-            <p className="profile-bio">{profile.bio}</p>
-          ) : (
-            <p className="profile-bio muted">Hujaandika maelezo bado.</p>
-          )}
+          <button
+            className="pf-round-btn pf-cover-edit"
+            onClick={() => coverInput.current && coverInput.current.click()}
+            aria-label="Badilisha background"
+          >
+            <CameraIcon />
+          </button>
         </div>
 
-        {/* ===== Takwimu ===== */}
-        <div className="profile-stats">
-          <div className="profile-stat">
-            <b>{myVideos.length}</b>
-            <span>Video</span>
+        {/* ===== Picha na takwimu ===== */}
+        <div className="pf-head">
+          <div className="pf-avatar-wrap">
+            <div
+              className="pf-avatar"
+              style={profile.avatar ? undefined : { background: avatarGradient(ME) }}
+            >
+              {profile.avatar ? (
+                <img src={profile.avatar} alt="Picha ya wasifu" />
+              ) : (
+                avatarLetter(profile.name)
+              )}
+            </div>
+
+            <button
+              className="pf-avatar-edit"
+              onClick={() => avatarInput.current && avatarInput.current.click()}
+              aria-label="Badilisha picha ya wasifu"
+            >
+              <CameraIcon size={15} />
+            </button>
           </div>
-          <div className="profile-stat">
-            <b>0</b>
-            <span>Wafuasi</span>
+
+          <div className="pf-stats">
+            <div className="pf-stat">
+              <b>{followedUsers.length}</b>
+              <span>Unaowafuata</span>
+            </div>
+            <div className="pf-stat">
+              <b>0</b>
+              <span>Wafuasi</span>
+            </div>
+            <div className="pf-stat">
+              <b>{formatCount(totalLikes)}</b>
+              <span>Likes</span>
+            </div>
           </div>
-          <div className="profile-stat">
-            <b>{followedUsers.length}</b>
-            <span>Unaowafuata</span>
-          </div>
-          <div className="profile-stat">
-            <b>{formatCount(totalLikes)}</b>
-            <span>Likes</span>
-          </div>
+        </div>
+
+        {/* Vitufe vilivyofichwa vya kuchagua picha */}
+        <input
+          ref={avatarInput}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => handlePick('avatar', e)}
+        />
+        <input
+          ref={coverInput}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => handlePick('cover', e)}
+        />
+
+        {/* ===== Jina na bio ===== */}
+        <div className="pf-info">
+          <h2 className="pf-name">{profile.name}</h2>
+          <span className="pf-handle">{ME}</span>
+
+          {profile.bio ? (
+            <p className="pf-bio">{profile.bio}</p>
+          ) : (
+            <p className="pf-bio muted">Hujaandika maelezo bado.</p>
+          )}
+
+          {imgError && <p className="pf-error">{imgError}</p>}
         </div>
 
         {/* ===== Hariri wasifu ===== */}
         {editing ? (
-          <form className="profile-form" onSubmit={saveEdit}>
-            <label className="profile-label" htmlFor="profileName">Jina</label>
-            <input
-              id="profileName"
-              className="profile-input"
-              type="text"
-              value={draftName}
-              onChange={(e) => setDraftName(e.target.value)}
-              maxLength={20}
-              placeholder="Jina lako"
-            />
+          <div className="pf-section" style={{ marginTop: 14 }}>
+            <form className="profile-form" onSubmit={saveEdit}>
+              <label className="profile-label" htmlFor="profileName">Jina</label>
+              <input
+                id="profileName"
+                className="profile-input"
+                type="text"
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                maxLength={20}
+                placeholder="Jina lako"
+              />
 
-            <label className="profile-label" htmlFor="profileBio">Maelezo (bio)</label>
-            <textarea
-              id="profileBio"
-              className="profile-input profile-textarea"
-              value={draftBio}
-              onChange={(e) => setDraftBio(e.target.value)}
-              maxLength={80}
-              rows={3}
-              placeholder="Eleza kipaji chako kwa ufupi..."
-            />
-            <span className="profile-count">{draftBio.length}/80</span>
+              <label className="profile-label" htmlFor="profileBio">Maelezo (bio)</label>
+              <textarea
+                id="profileBio"
+                className="profile-input profile-textarea"
+                value={draftBio}
+                onChange={(e) => setDraftBio(e.target.value)}
+                maxLength={80}
+                rows={3}
+                placeholder="Eleza kipaji chako kwa ufupi..."
+              />
+              <span className="profile-count">{draftBio.length}/80</span>
 
-            <div className="profile-form-actions">
-              <button
-                type="button"
-                className="profile-btn ghost"
-                onClick={() => setEditing(false)}
-              >
-                Ghairi
-              </button>
-              <button type="submit" className="profile-btn primary">
-                Hifadhi
-              </button>
-            </div>
-          </form>
+              <div className="profile-form-actions">
+                <button
+                  type="button"
+                  className="profile-btn ghost"
+                  onClick={() => setEditing(false)}
+                >
+                  Ghairi
+                </button>
+                <button type="submit" className="profile-btn primary">
+                  Hifadhi
+                </button>
+              </div>
+            </form>
+          </div>
         ) : (
-          <button className="profile-edit-btn" onClick={startEdit}>
-            Hariri wasifu
-          </button>
+          <div className="pf-actions">
+            <button className="profile-edit-btn" onClick={startEdit}>
+              Hariri wasifu
+            </button>
+          </div>
         )}
 
         {/* ===== Vichupo ===== */}
-        <div className="profile-tabs">
-          <button
-            className={tab === 'mine' ? 'profile-tab active' : 'profile-tab'}
-            onClick={() => setTab('mine')}
-            aria-label="Video zangu"
-          >
-            <GridIcon />
-          </button>
-          <button
-            className={tab === 'liked' ? 'profile-tab active' : 'profile-tab'}
-            onClick={() => setTab('liked')}
-            aria-label="Zilizopendwa"
-          >
-            <HeartOutlineIcon />
-          </button>
-          <button
-            className={tab === 'following' ? 'profile-tab active' : 'profile-tab'}
-            onClick={() => setTab('following')}
-            aria-label="Unaowafuata"
-          >
-            <UsersIcon />
-          </button>
+        <div className="pf-body">
+          <div className="profile-tabs">
+            <button
+              className={tab === 'mine' ? 'profile-tab active' : 'profile-tab'}
+              onClick={() => setTab('mine')}
+              aria-label="Video zangu"
+            >
+              <GridIcon />
+              <span className="pf-tab-count">{myVideos.length}</span>
+            </button>
+            <button
+              className={tab === 'liked' ? 'profile-tab active' : 'profile-tab'}
+              onClick={() => setTab('liked')}
+              aria-label="Zilizopendwa"
+            >
+              <HeartOutlineIcon />
+              <span className="pf-tab-count">{likedVideos.length}</span>
+            </button>
+            <button
+              className={tab === 'following' ? 'profile-tab active' : 'profile-tab'}
+              onClick={() => setTab('following')}
+              aria-label="Unaowafuata"
+            >
+              <UsersIcon />
+              <span className="pf-tab-count">{followedUsers.length}</span>
+            </button>
+          </div>
+
+          {tab === 'mine' && (
+            myVideos.length === 0 ? (
+              <div className="profile-empty">
+                <p>Hujapakia video bado.</p>
+                <span>Gusa kitufe cha + kwenye navbar kupakia kipaji chako.</span>
+                <button className="profile-btn primary" onClick={() => navigate('/upload')}>
+                  Pakia video
+                </button>
+              </div>
+            ) : (
+              <div className="explore-grid">
+                {myVideos.map(v => renderTile(v))}
+              </div>
+            )
+          )}
+
+          {tab === 'liked' && (
+            likedVideos.length === 0 ? (
+              <div className="profile-empty">
+                <p>Hujapenda video yoyote bado.</p>
+                <span>Video unazopenda zitaonekana hapa.</span>
+              </div>
+            ) : (
+              <div className="explore-grid">
+                {likedVideos.map(v => renderTile(v))}
+              </div>
+            )
+          )}
+
+          {tab === 'following' && (
+            followingInfo.length === 0 ? (
+              <div className="profile-empty">
+                <p>Hujamfuata mtu yeyote bado.</p>
+                <span>Gusa + kwenye duara la mtumiaji kwenye Feed kumfuata.</span>
+              </div>
+            ) : (
+              <div className="follow-list">
+                {followingInfo.map(item => (
+                  <div className="follow-row" key={item.name}>
+                    <span
+                      className="follow-avatar"
+                      style={{ background: avatarGradient(item.name) }}
+                    >
+                      {avatarLetter(item.name)}
+                    </span>
+
+                    <span className="follow-main">
+                      <span className="follow-name">{item.name}</span>
+                      <span className="follow-meta">{item.count} video</span>
+                    </span>
+
+                    <button
+                      className="follow-msg"
+                      onClick={() => navigate(`/messages/${encodeURIComponent(item.name)}`)}
+                      aria-label={`Mtumie ujumbe ${item.name}`}
+                    >
+                      <ChatIcon />
+                    </button>
+
+                    <button
+                      className="follow-unfollow"
+                      onClick={() => toggleFollow(item.name)}
+                    >
+                      Acha kufuata
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
         </div>
-
-        {/* ===== Maudhui ya kichupo ===== */}
-        {tab === 'mine' && (
-          myVideos.length === 0 ? (
-            <div className="profile-empty">
-              <p>Hujapakia video bado.</p>
-              <span>Gusa kitufe cha + kwenye navbar kupakia kipaji chako.</span>
-              <button className="profile-btn primary" onClick={() => navigate('/upload')}>
-                Pakia video
-              </button>
-            </div>
-          ) : (
-            <div className="explore-grid">
-              {myVideos.map(v => renderTile(v, true))}
-            </div>
-          )
-        )}
-
-        {tab === 'liked' && (
-          likedVideos.length === 0 ? (
-            <div className="profile-empty">
-              <p>Hujapenda video yoyote bado.</p>
-              <span>Video unazopenda zitaonekana hapa.</span>
-            </div>
-          ) : (
-            <div className="explore-grid">
-              {likedVideos.map(v => renderTile(v, false))}
-            </div>
-          )
-        )}
-
-        {tab === 'following' && (
-          followingInfo.length === 0 ? (
-            <div className="profile-empty">
-              <p>Hujamfuata mtu yeyote bado.</p>
-              <span>Gusa + kwenye duara la mtumiaji kwenye Feed kumfuata.</span>
-            </div>
-          ) : (
-            <div className="follow-list">
-              {followingInfo.map(item => (
-                <div className="follow-row" key={item.name}>
-                  <span
-                    className="follow-avatar"
-                    style={{ background: avatarGradient(item.name) }}
-                  >
-                    {avatarLetter(item.name)}
-                  </span>
-
-                  <span className="follow-main">
-                    <span className="follow-name">{item.name}</span>
-                    <span className="follow-meta">{item.count} video</span>
-                  </span>
-
-                  <button
-                    className="follow-msg"
-                    onClick={() => navigate(`/messages/${encodeURIComponent(item.name)}`)}
-                    aria-label={`Mtumie ujumbe ${item.name}`}
-                  >
-                    <ChatIcon />
-                  </button>
-
-                  <button
-                    className="follow-unfollow"
-                    onClick={() => toggleFollow(item.name)}
-                  >
-                    Acha kufuata
-                  </button>
-                </div>
-              ))}
-            </div>
-          )
-        )}
       </div>
 
       {/* ===== Video ikifunguliwa skrini nzima ===== */}

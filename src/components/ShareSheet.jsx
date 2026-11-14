@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useVideos } from '../context/VideoContext'
 import { downloadVideoWithLogo } from '../utils/downloadWithLogo'
 import '../styles/share.css'
 import '../styles/share-download.css'
+import '../styles/share-delete.css'
+
+const ME = '@wewe'
 
 function WhatsAppIcon() {
   return (
@@ -76,6 +80,18 @@ function DownloadIcon() {
   )
 }
 
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  )
+}
+
 const IDLE = { status: 'idle', progress: 0, message: '' }
 
 function errorText(err) {
@@ -103,11 +119,14 @@ function saveBlob(blob, filename) {
 }
 
 function ShareSheet({ video, onClose }) {
+  const { deleteVideo } = useVideos()
   const [copied, setCopied] = useState(false)
   const [dl, setDl] = useState(IDLE)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const abortRef = useRef(null)
 
   const busy = dl.status === 'working'
+  const isMine = video.username === ME
 
   // BASE_URL ni "/talent-flex-/" mtandaoni na "/" kwenye kompyuta yako
   const link = `${window.location.origin}${import.meta.env.BASE_URL}?v=${video.id}`
@@ -172,6 +191,7 @@ function ShareSheet({ video, onClose }) {
 
   const startDownload = async () => {
     if (busy) return
+    setConfirmDelete(false)
 
     if (!video.videoUrl) {
       setDl({
@@ -217,6 +237,12 @@ function ShareSheet({ video, onClose }) {
 
   const cancelDownload = () => {
     if (abortRef.current) abortRef.current.abort()
+  }
+
+  // Futa video (ya kwangu tu)
+  const doDelete = () => {
+    onClose()
+    deleteVideo(video.id)
   }
 
   const percent = Math.round(dl.progress * 100)
@@ -297,6 +323,20 @@ function ShareSheet({ video, onClose }) {
               <span>Zaidi</span>
             </button>
           )}
+
+          {isMine && (
+            <button
+              className="share-option"
+              onClick={() => {
+                setDl(IDLE)
+                setConfirmDelete(true)
+              }}
+              disabled={busy}
+            >
+              <span className="share-circle delete"><TrashIcon /></span>
+              <span>Futa</span>
+            </button>
+          )}
         </div>
 
         {dl.status === 'working' && (
@@ -327,6 +367,23 @@ function ShareSheet({ video, onClose }) {
           <div className="dl-panel error">
             <p className="dl-title">Haikufanikiwa</p>
             <p className="dl-hint">{dl.message}</p>
+          </div>
+        )}
+
+        {confirmDelete && (
+          <div className="dl-panel error">
+            <p className="dl-title">Futa video hii?</p>
+            <p className="dl-hint">
+              Video, maoni na likes zake vitafutwa. Hatua hii haiwezi kurudishwa.
+            </p>
+            <div className="dl-actions two">
+              <button className="dl-cancel" onClick={() => setConfirmDelete(false)}>
+                Ghairi
+              </button>
+              <button className="dl-confirm" onClick={doDelete}>
+                Futa
+              </button>
+            </div>
           </div>
         )}
 

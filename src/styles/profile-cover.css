@@ -1,0 +1,210 @@
+.pf-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  background: #0d0d0d;
+}
+
+/* ===== Background ===== */
+
+.pf-cover {
+  position: relative;
+  height: calc(190px + env(safe-area-inset-top, 0px));
+  background-color: #1a1a1a;
+  background-image: linear-gradient(135deg, #0ea5c6, #6d28d9 55%, #db2777);
+  background-size: cover;
+  background-position: center;
+}
+
+.pf-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.35),
+    transparent 40%,
+    rgba(13, 13, 13, 0.95)
+  );
+  pointer-events: none;
+}
+
+.pf-round-btn {
+  position: absolute;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(20, 20, 20, 0.55);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.pf-round-btn:active {
+  transform: scale(0.92);
+}
+
+.pf-settings {
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: 12px;
+}
+
+.pf-cover-edit {
+  right: 12px;
+  bottom: 14px;
+}
+
+/* ===== Picha na takwimu ===== */
+
+.pf-head {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-top: -48px;
+  padding: 0 16px;
+}
+
+.pf-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+}
+
+.pf-avatar {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 3px solid #0d0d0d;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 38px;
+  font-weight: 800;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+
+.pf-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pf-avatar-edit {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 2px solid #0d0d0d;
+  border-radius: 50%;
+  background: #ff7a1a;
+  color: #fff;
+  cursor: pointer;
+}
+
+.pf-avatar-edit:active {
+  transform: scale(0.9);
+}
+
+.pf-stats {
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding-bottom: 6px;
+}
+
+.pf-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.pf-stat b {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.pf-stat span {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ===== Jina na bio ===== */
+
+.pf-info {
+  padding: 12px 16px 0;
+}
+
+.pf-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.pf-handle {
+  display: block;
+  margin-top: 2px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.pf-bio {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.85);
+  word-break: break-word;
+}
+
+.pf-bio.muted {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.pf-error {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: #ff7a7a;
+}
+
+.pf-actions {
+  padding: 14px 16px 6px;
+}
+
+.pf-actions .profile-edit-btn {
+  margin-bottom: 0;
+}
+
+.pf-section {
+  padding: 0 16px;
+}
+
+.pf-body {
+  padding: 0 12px;
+}
+
+.pf-tab-count {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}

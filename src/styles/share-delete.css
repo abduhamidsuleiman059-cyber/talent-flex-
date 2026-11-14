@@ -1,0 +1,29 @@
+.share-circle.delete {
+  border: 1px solid rgba(255, 90, 90, 0.4);
+  background: rgba(255, 90, 90, 0.16);
+  color: #ff6b81;
+}
+
+.dl-actions.two {
+  justify-content: stretch;
+  gap: 10px;
+}
+
+.dl-actions.two button {
+  flex: 1;
+  height: 38px;
+}
+
+.dl-confirm {
+  border: none;
+  border-radius: 16px;
+  background: #ff4d4d;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dl-confirm:active {
+  transform: scale(0.97);
+}
