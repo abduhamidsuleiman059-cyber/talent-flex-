@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { useVideos } from '../context/VideoContext'
 import '../styles/admin.css'
 import '../styles/admin-pin.css'
+import '../styles/admin-manage.css'
 
 // Badilisha PIN hii upendavyo
 const ADMIN_PIN = '808022'
 const SESSION_KEY = 'talentflex-admin-ok'
 
 function Admin() {
-  const { videos, approveVideo, rejectVideo } = useVideos()
+  const { videos, deleteVideo } = useVideos()
 
   const [unlocked, setUnlocked] = useState(() => {
     try {
@@ -19,6 +20,7 @@ function Admin() {
   })
   const [pin, setPin] = useState('')
   const [pinError, setPinError] = useState('')
+  const [confirmId, setConfirmId] = useState(null)
 
   const handleUnlock = (e) => {
     e.preventDefault()
@@ -44,6 +46,12 @@ function Admin() {
     }
     setUnlocked(false)
     setPin('')
+    setConfirmId(null)
+  }
+
+  const handleDelete = (id) => {
+    deleteVideo(id)
+    setConfirmId(null)
   }
 
   if (!unlocked) {
@@ -90,41 +98,66 @@ function Admin() {
     )
   }
 
-  const pending = videos.filter(v => v.status === 'pending')
+  // Video zote za watumiaji, mpya kwanza
+  const userVideos = videos
+    .filter(v => v.isUser)
+    .sort((a, b) => b.id - a.id)
 
   return (
     <div className="admin-wrapper">
       <div className="admin-topbar">
-        <h2>Ukaguzi wa Video ({pending.length})</h2>
+        <h2>Usimamizi wa Video ({userVideos.length})</h2>
         <button className="admin-lock" onClick={handleLock}>
           Toka
         </button>
       </div>
 
-      {pending.length === 0 && (
-        <p className="admin-empty">Hakuna video inayosubiri ukaguzi kwa sasa.</p>
+      <p className="admin-note">
+        Video zinachapishwa moja kwa moja kwenye Feed. Hapa unaweza kufuta video ya mtumiaji yeyote.
+      </p>
+
+      {userVideos.length === 0 && (
+        <p className="admin-empty">Hakuna video za watumiaji kwa sasa.</p>
       )}
 
       <div className="admin-list">
-        {pending.map(video => (
+        {userVideos.map(video => (
           <div className="admin-card" key={video.id}>
             {video.videoUrl && (
               <video src={video.videoUrl} className="admin-preview" controls />
             )}
+
             <div className="admin-info">
-              <span className="admin-tag">
-                {video.category === 'ball' ? '⚽ Ball Skills' : '🎵 Music & Beats'}
-              </span>
+              <div className="admin-meta">
+                <span className="admin-user">{video.username}</span>
+                <span className="admin-tag">
+                  {video.category === 'ball' ? '⚽ Ball Skills' : '🎵 Music & Beats'}
+                </span>
+              </div>
               <p>{video.caption}</p>
             </div>
-            <div className="admin-actions">
-              <button className="approve-btn" onClick={() => approveVideo(video.id)}>
-                Idhinisha ✓
-              </button>
-              <button className="reject-btn" onClick={() => rejectVideo(video.id)}>
-                Kataa ✕
-              </button>
-            </div>
+
+            {confirmId === video.id ? (
+              <div>
+                <p className="admin-confirm-text">
+                  Futa video hii? Maoni na likes zake vitafutwa pia.
+                </p>
+                <div className="admin-actions">
+                  <button className="admin-cancel" onClick={() => setConfirmId(null)}>
+                    Ghairi
+                  </button>
+                  <button className="reject-btn" onClick={() => handleDelete(video.id)}>
+                    Ndiyo, futa
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="admin-actions">
+                <button className="reject-btn" onClick={() => setConfirmId(video.id)}>
+                  Futa video
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

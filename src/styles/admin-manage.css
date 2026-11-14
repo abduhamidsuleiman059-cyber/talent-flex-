@@ -1,0 +1,39 @@
+.admin-note {
+  margin: 6px 0 14px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.admin-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.admin-user {
+  font-weight: 700;
+  color: #fff;
+}
+
+.admin-cancel {
+  flex: 1;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-confirm-text {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #ff9b9b;
+}

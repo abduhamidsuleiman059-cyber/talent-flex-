@@ -75,7 +75,12 @@ export function VideoProvider({ children }) {
         try {
           const blob = await getVideoBlob(m.id)
           if (blob) {
-            restored.push({ ...m, videoUrl: URL.createObjectURL(blob) })
+            // Hakuna ukaguzi tena: video zote zinaonekana kwenye Feed
+            restored.push({
+              ...m,
+              status: 'approved',
+              videoUrl: URL.createObjectURL(blob)
+            })
           }
         } catch (err) {
           console.error('Imeshindwa kurudisha video', m.id, err)
@@ -154,28 +159,27 @@ export function VideoProvider({ children }) {
     }
   }, [followedUsers])
 
-  const addPendingVideo = async (video) => {
+  // Chapisha video moja kwa moja kwenye Feed.
+  // Inarudisha true kama video imehifadhiwa kabisa, false kama imeshindwa kuhifadhiwa.
+  const publishVideo = async (video) => {
     const id = Date.now()
+    let saved = true
+
     try {
       const res = await fetch(video.videoUrl)
       const blob = await res.blob()
       await saveVideoBlob(id, blob)
     } catch (err) {
       console.error('Imeshindwa kuhifadhi video', err)
+      saved = false
     }
+
     setVideos(prev => [
-      { ...video, id, status: 'pending', isUser: true },
+      { ...video, id, status: 'approved', isUser: true },
       ...prev
     ])
-  }
 
-  const approveVideo = (id) => {
-    setVideos(prev => prev.map(v => v.id === id ? { ...v, status: 'approved' } : v))
-  }
-
-  const rejectVideo = (id) => {
-    setVideos(prev => prev.map(v => v.id === id ? { ...v, status: 'rejected' } : v))
-    deleteVideoBlob(id).catch(() => {})
+    return saved
   }
 
   // Futa video kabisa (pamoja na maoni na like zake)
@@ -245,9 +249,7 @@ export function VideoProvider({ children }) {
     <VideoContext.Provider
       value={{
         videos,
-        addPendingVideo,
-        approveVideo,
-        rejectVideo,
+        publishVideo,
         deleteVideo,
         likedIds,
         toggleLike,

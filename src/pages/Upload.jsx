@@ -1,9 +1,22 @@
 import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
 import '../styles/upload.css'
+import '../styles/upload-published.css'
+
+// Muda wa juu wa video (sekunde): dakika 30
+const MAX_SECONDS = 30 * 60
+
+function formatDuration(sec) {
+  const total = Math.round(sec)
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
 
 function Upload() {
-  const { addPendingVideo } = useVideos()
+  const navigate = useNavigate()
+  const { publishVideo } = useVideos()
 
   const [videoFile, setVideoFile] = useState(null)
   const [videoPreview, setVideoPreview] = useState(null)
@@ -11,7 +24,9 @@ function Upload() {
   const [category, setCategory] = useState('ball')
   const [duration, setDuration] = useState(null)
   const [error, setError] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  const [published, setPublished] = useState(false)
+  const [savedOk, setSavedOk] = useState(true)
   const fileInputRef = useRef(null)
 
   const handleFileChange = (e) => {
@@ -25,21 +40,35 @@ function Upload() {
 
     video.onloadedmetadata = () => {
       const dur = video.duration
-      if (dur > 35) {
-        setError(`Video ni ndefu sana (${dur.toFixed(1)}s). Inatakiwa isizidi sekunde 35.`)
+      if (dur > MAX_SECONDS) {
+        setError(
+          `Video ni ndefu sana (${formatDuration(dur)}). Inatakiwa isizidi dakika ${MAX_SECONDS / 60}.`
+        )
         setVideoFile(null)
         setVideoPreview(null)
+        setDuration(null)
+        URL.revokeObjectURL(url)
+        if (fileInputRef.current) fileInputRef.current.value = ''
         return
       }
-      setDuration(dur.toFixed(1))
+      setDuration(formatDuration(dur))
       setVideoFile(file)
       setVideoPreview(url)
     }
+
+    video.onerror = () => {
+      setError('Imeshindwa kusoma video hii. Jaribu faili nyingine.')
+      URL.revokeObjectURL(url)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+
     video.src = url
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    if (publishing) return
+
     if (!videoFile) {
       setError('Tafadhali chagua video kwanza.')
       return
@@ -49,16 +78,21 @@ function Upload() {
       return
     }
 
-    addPendingVideo({
+    setError('')
+    setPublishing(true)
+
+    const saved = await publishVideo({
       username: '@wewe',
-      caption,
+      caption: caption.trim(),
       category,
       videoUrl: videoPreview,
       likes: 0,
       comments: 0
     })
 
-    setSubmitted(true)
+    setSavedOk(saved)
+    setPublishing(false)
+    setPublished(true)
   }
 
   const resetForm = () => {
@@ -68,21 +102,40 @@ function Upload() {
     setCategory('ball')
     setDuration(null)
     setError('')
-    setSubmitted(false)
+    setPublished(false)
+    setSavedOk(true)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  if (submitted) {
+  if (published) {
     return (
       <div className="upload-wrapper">
         <div className="pending-screen">
-          <div className="pending-icon">⏳</div>
-          <h2>Video Imepokelewa!</h2>
-          <p>Video yako "{caption}" iko kwenye <strong>ukaguzi (review)</strong> kuthibitisha kama ni kipaji halisi.</p>
-          <span className="pending-status">Inasubiri Uidhinishwe</span>
-          <button className="upload-again-btn" onClick={resetForm}>
-            Pakia Nyingine
-          </button>
+          <div className="published-icon">
+            <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h2>Video Imechapishwa!</h2>
+          <p>
+            Video yako "{caption}" iko kwenye <strong>Feed</strong> sasa na inaonekana kwa wengine.
+          </p>
+
+          {!savedOk && (
+            <p className="upload-warning">
+              Video imechapishwa, lakini kifaa kimeshindwa kuihifadhi kabisa (huenda ni kubwa sana
+              au nafasi imejaa). Itapotea ukirefresh ukurasa.
+            </p>
+          )}
+
+          <div className="published-btns">
+            <button className="view-feed-btn" onClick={() => navigate('/')}>
+              Tazama Feed
+            </button>
+            <button className="upload-again-btn" onClick={resetForm}>
+              Pakia Nyingine
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -91,7 +144,9 @@ function Upload() {
   return (
     <div className="upload-wrapper">
       <h2 className="upload-title">Pakia Kipaji Chako</h2>
-      <p className="upload-subtitle">Video sekunde 30-35, kipaji halisi tu (ball skills au music/beats)</p>
+      <p className="upload-subtitle">
+        Video hadi dakika {MAX_SECONDS / 60}. Inachapishwa moja kwa moja kwenye Feed.
+      </p>
 
       <form className="upload-form" onSubmit={handleSubmit}>
         <label className="video-picker" htmlFor="videoInput">
@@ -104,7 +159,7 @@ function Upload() {
                 <rect x="1" y="5" width="15" height="14" rx="2"/>
               </svg>
               <span>Gusa kuchagua video</span>
-              <span className="picker-hint">Max sekunde 35</span>
+              <span className="picker-hint">Hadi dakika {MAX_SECONDS / 60}</span>
             </div>
           )}
           <input
@@ -117,7 +172,7 @@ function Upload() {
           />
         </label>
 
-        {duration && <p className="duration-info">Muda wa video: {duration}s ✓</p>}
+        {duration && <p className="duration-info">Muda wa video: {duration} ✓</p>}
         {error && <p className="upload-error">{error}</p>}
 
         <textarea
@@ -147,8 +202,8 @@ function Upload() {
           </button>
         </div>
 
-        <button type="submit" className="submit-btn">
-          Tuma kwa Ukaguzi
+        <button type="submit" className="submit-btn" disabled={publishing}>
+          {publishing ? 'Inachapisha...' : 'Chapisha Video'}
         </button>
       </form>
     </div>
