@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useChat } from '../context/ChatContext'
+import { setPendingFile } from '../utils/pendingFile'
 import '../styles/navbar.css'
 import '../styles/messages.css'
 import '../styles/navbar-tiktok.css'
@@ -21,6 +22,7 @@ function Navbar() {
   const scrollTimeout = useRef(null)
   const pressTimer = useRef(null)
   const longPressed = useRef(false)
+  const fileRef = useRef(null)
 
   // Inasikiliza scroll ya Feed kila ukurasa unapobadilika
   useEffect(() => {
@@ -62,10 +64,24 @@ function Navbar() {
     navigate('/profile')
   }
 
-  // Navbar ijifiche ndani ya mazungumzo ili kisanduku cha kuandika kikae chini
-  if (location.pathname.startsWith('/messages/')) return null
+  // Kitufe cha +: fungua faili za simu moja kwa moja
+  const openPicker = () => {
+    if (fileRef.current) fileRef.current.click()
+  }
+
+  const handlePicked = (e) => {
+    const file = e.target.files && e.target.files[0]
+    e.target.value = ''
+    if (!file) return
+    setPendingFile(file)
+    navigate('/upload', { state: { t: Date.now() } })
+  }
 
   const path = location.pathname
+
+  // Navbar ijifiche ndani ya mazungumzo na kwenye ukurasa wa kuhariri video
+  if (path.startsWith('/messages/') || path === '/upload') return null
+
   const onHome = path === '/'
   const onFriends = path === '/friends'
   const onInbox = path.startsWith('/messages')
@@ -96,12 +112,20 @@ function Navbar() {
         <span className="nav-label">{LABELS.friends}</span>
       </button>
 
-      <button className="nav-upload" onClick={() => navigate('/upload')} aria-label="Pakia video">
+      <button className="nav-upload" onClick={openPicker} aria-label="Chagua video">
         <svg viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.8" strokeLinecap="round">
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </button>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="video/*"
+        hidden
+        onChange={handlePicked}
+      />
 
       <button
         className={onInbox ? 'nav-item has-badge active' : 'nav-item has-badge'}

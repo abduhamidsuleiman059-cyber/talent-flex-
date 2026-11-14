@@ -1,0 +1,11 @@
+#root .video-card .video-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.action-btn.dim {
+  opacity: 0.45;
+}

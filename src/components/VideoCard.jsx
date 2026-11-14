@@ -2,12 +2,15 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useVideos } from '../context/VideoContext'
 import CommentsSheet from './CommentsSheet'
 import ShareSheet from './ShareSheet'
+import { displayName } from '../utils/displayName'
+import { getFilterCss } from '../utils/videoFilters'
 import '../styles/videocard.css'
 import '../styles/videocard-video.css'
 import '../styles/videocard-like.css'
 import '../styles/videocard-sound.css'
 import '../styles/avatar.css'
 import '../styles/videocard-playpause.css'
+import '../styles/videocard-name.css'
 
 const ME = '@wewe'
 
@@ -70,16 +73,20 @@ function VideoCard({ video }) {
   const indicatorTimer = useRef(null)
   const sound = useSyncExternalStore(subscribe, getSnapshot)
 
-  const tagColor = video.category === 'ball' ? '#00D4AA' : '#C724F5'
-  const tagLabel = video.category === 'ball' ? 'Ball Skills' : 'Music & Beats'
+  const name = displayName(video.username)
 
   const liked = likedIds.includes(video.id)
   const likeCount = video.likes + (liked ? 1 : 0)
   const commentCount = video.comments + (comments[video.id]?.length || 0)
+  const commentsOff = video.allowComments === false
 
   const isMine = video.username === ME
   const following = followedUsers.includes(video.username)
   const showBadge = !isMine && (!following || showCheck)
+
+  // Sehemu iliyochaguliwa ya video (kupunguza)
+  const trimStart = video.trimStart || 0
+  const trimEnd = video.trimEnd || 0
 
   // Safisha timer kadi ikiondoka
   useEffect(() => {
@@ -131,6 +138,23 @@ function VideoCard({ video }) {
     if (el) el.muted = !sound
   }, [sound])
 
+  // Anza kwenye mwanzo wa sehemu iliyochaguliwa
+  const handleLoadedMetadata = () => {
+    const el = videoRef.current
+    if (el && trimStart > 0) el.currentTime = trimStart
+  }
+
+  // Rudia ndani ya sehemu iliyochaguliwa
+  const handleTimeUpdate = () => {
+    const el = videoRef.current
+    if (!el) return
+    if (trimEnd && el.currentTime >= trimEnd) {
+      el.currentTime = trimStart
+    } else if (trimStart && el.currentTime < trimStart - 0.2) {
+      el.currentTime = trimStart
+    }
+  }
+
   // Gusa video: simamisha / endelea
   const togglePlay = () => {
     const el = videoRef.current
@@ -172,6 +196,9 @@ function VideoCard({ video }) {
           loop
           playsInline
           preload="metadata"
+          style={video.filter ? { filter: getFilterCss(video.filter) } : undefined}
+          onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
           onClick={togglePlay}
         />
       )}
@@ -192,12 +219,8 @@ function VideoCard({ video }) {
       )}
 
       <div className="video-overlay">
-        <span className="video-tag" style={{ borderColor: tagColor, color: tagColor }}>
-          {tagLabel}
-        </span>
         <div className="video-info">
-          <h3>{video.username}</h3>
-          <p>{video.caption}</p>
+          <h3 className="video-name">{name}</h3>
         </div>
       </div>
 
@@ -242,14 +265,16 @@ function VideoCard({ video }) {
         </button>
 
         <button
-          className="action-btn"
-          onClick={() => setShowComments(true)}
-          aria-label="Fungua maoni"
+          className={commentsOff ? 'action-btn dim' : 'action-btn'}
+          onClick={() => {
+            if (!commentsOff) setShowComments(true)
+          }}
+          aria-label={commentsOff ? 'Maoni yamezimwa' : 'Fungua maoni'}
         >
           <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
             <path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2z"/>
           </svg>
-          <span>{formatCount(commentCount)}</span>
+          <span>{commentsOff ? '—' : formatCount(commentCount)}</span>
         </button>
 
         <button

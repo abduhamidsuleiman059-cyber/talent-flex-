@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useVideos } from '../context/VideoContext'
+import { displayName } from '../utils/displayName'
 import '../styles/admin.css'
 import '../styles/admin-pin.css'
 import '../styles/admin-manage.css'
 
 // Badilisha PIN hii upendavyo
-const ADMIN_PIN = '808022'
+const ADMIN_PIN = '1234'
 const SESSION_KEY = 'talentflex-admin-ok'
 
 function Admin() {
@@ -129,12 +130,10 @@ function Admin() {
 
             <div className="admin-info">
               <div className="admin-meta">
-                <span className="admin-user">{video.username}</span>
-                <span className="admin-tag">
-                  {video.category === 'ball' ? '⚽ Ball Skills' : '🎵 Music & Beats'}
-                </span>
+                <span className="admin-user">{displayName(video.username)}</span>
+                <span>{video.username}</span>
               </div>
-              <p>{video.caption}</p>
+              {video.caption && <p>{video.caption}</p>}
             </div>
 
             {confirmId === video.id ? (

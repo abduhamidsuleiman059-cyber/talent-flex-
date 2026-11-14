@@ -110,11 +110,15 @@ export function VideoProvider({ children }) {
         id: v.id,
         username: v.username,
         caption: v.caption,
-        category: v.category,
         likes: v.likes,
         comments: v.comments,
         status: v.status,
-        isUser: true
+        isUser: true,
+        duration: v.duration,
+        trimStart: v.trimStart,
+        trimEnd: v.trimEnd,
+        filter: v.filter,
+        allowComments: v.allowComments
       }))
     try {
       localStorage.setItem(META_KEY, JSON.stringify(meta))

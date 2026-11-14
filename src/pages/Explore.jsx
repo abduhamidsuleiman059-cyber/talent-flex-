@@ -1,18 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useVideos } from '../context/VideoContext'
 import VideoCard from '../components/VideoCard'
+import { displayName } from '../utils/displayName'
+import { getFilterCss } from '../utils/videoFilters'
 import '../styles/explore.css'
-
-const CATEGORIES = [
-  { id: 'all', label: 'Zote' },
-  { id: 'ball', label: 'Ball Skills' },
-  { id: 'music', label: 'Music & Beats' }
-]
-
-const CATEGORY_LABELS = {
-  ball: 'Ball Skills',
-  music: 'Music & Beats'
-}
 
 function formatCount(n) {
   if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M'
@@ -54,7 +45,8 @@ function HeartIcon() {
   )
 }
 
-function CategoryGlyph({ category }) {
+// Ikoni kwenye video za mfano (zisizo na faili halisi)
+function TileGlyph({ category }) {
   if (category === 'ball') {
     return (
       <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -68,11 +60,18 @@ function CategoryGlyph({ category }) {
       </svg>
     )
   }
+  if (category === 'music') {
+    return (
+      <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 18V5l12-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="16" r="3" />
+      </svg>
+    )
+  }
   return (
-    <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" />
-      <circle cx="18" cy="16" r="3" />
+    <svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor">
+      <polygon points="7 4 20 12 7 20 7 4" />
     </svg>
   )
 }
@@ -80,7 +79,6 @@ function CategoryGlyph({ category }) {
 function Explore() {
   const { videos, likedIds } = useVideos()
   const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState('all')
   const [selectedId, setSelectedId] = useState(null)
 
   const approved = videos.filter(v => v.status === 'approved')
@@ -89,14 +87,9 @@ function Explore() {
   const totalLikes = (v) => v.likes + (likedIds.includes(v.id) ? 1 : 0)
 
   const results = approved
-    .filter(v => filter === 'all' || v.category === filter)
     .filter(v => {
       if (!q) return true
-      const haystack = [
-        v.username,
-        v.caption,
-        CATEGORY_LABELS[v.category] || ''
-      ]
+      const haystack = [displayName(v.username), v.username, v.caption || '']
         .join(' ')
         .toLowerCase()
       return haystack.includes(q)
@@ -115,9 +108,7 @@ function Explore() {
     return () => window.removeEventListener('keydown', onKey)
   }, [selected])
 
-  let heading = 'Zinazovuma'
-  if (q) heading = `Matokeo (${results.length})`
-  else if (filter !== 'all') heading = CATEGORY_LABELS[filter]
+  const heading = q ? `Matokeo (${results.length})` : 'Zinazovuma'
 
   return (
     <>
@@ -131,7 +122,7 @@ function Explore() {
           <input
             type="text"
             className="explore-search-input"
-            placeholder="Tafuta vipaji, watumiaji..."
+            placeholder="Tafuta video au watumiaji..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             maxLength={40}
@@ -147,29 +138,13 @@ function Explore() {
           )}
         </div>
 
-        <div className="explore-chips">
-          {CATEGORIES.map(c => (
-            <button
-              key={c.id}
-              className={
-                filter === c.id
-                  ? `explore-chip active ${c.id}`
-                  : `explore-chip ${c.id}`
-              }
-              onClick={() => setFilter(c.id)}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-
         <h3 className="explore-heading">{heading}</h3>
 
         {results.length === 0 ? (
           <div className="explore-empty">
             <SearchIcon />
             <p>Hakuna video iliyopatikana.</p>
-            <span>Jaribu neno lingine au kategoria nyingine.</span>
+            <span>Jaribu neno lingine.</span>
           </div>
         ) : (
           <div className="explore-grid">
@@ -177,28 +152,29 @@ function Explore() {
               <button
                 key={video.id}
                 className="explore-tile"
-                style={{ background: video.gradient }}
+                style={{ background: video.gradient || '#222' }}
                 onClick={() => setSelectedId(video.id)}
-                aria-label={`Fungua video ya ${video.username}`}
+                aria-label={`Fungua video ya ${displayName(video.username)}`}
               >
                 {video.videoUrl ? (
                   <video
                     className="explore-thumb"
-                    src={`${video.videoUrl}#t=0.1`}
+                    src={`${video.videoUrl}#t=${video.trimStart || 0.1}`}
                     muted
                     playsInline
                     preload="metadata"
+                    style={video.filter ? { filter: getFilterCss(video.filter) } : undefined}
                   />
                 ) : (
                   <span className="explore-glyph">
-                    <CategoryGlyph category={video.category} />
+                    <TileGlyph category={video.category} />
                   </span>
                 )}
 
                 <span className="explore-tile-shade" />
 
                 <span className="explore-tile-info">
-                  <span className="explore-tile-user">{video.username}</span>
+                  <span className="explore-tile-user">{displayName(video.username)}</span>
                   <span className="explore-tile-likes">
                     <HeartIcon />
                     {formatCount(totalLikes(video))}
