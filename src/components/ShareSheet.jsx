@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { downloadVideoWithLogo } from '../utils/downloadWithLogo'
 import '../styles/share.css'
+import '../styles/share-download.css'
 
 function WhatsAppIcon() {
   return (
@@ -64,8 +66,48 @@ function MoreIcon() {
   )
 }
 
+function DownloadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v12" />
+      <polyline points="7 11 12 16 17 11" />
+      <path d="M4 20h16" />
+    </svg>
+  )
+}
+
+const IDLE = { status: 'idle', progress: 0, message: '' }
+
+function errorText(err) {
+  switch (err && err.code) {
+    case 'UNSUPPORTED':
+      return 'Kivinjari chako hakiruhusu kuandaa video. Tumia Chrome ya toleo jipya.'
+    case 'PLAY_BLOCKED':
+      return 'Kivinjari kimezuia kuanza kuandaa video. Gusa Download tena.'
+    case 'LOAD_FAILED':
+      return 'Imeshindwa kusoma video hii. Jaribu tena.'
+    default:
+      return 'Imeshindwa kuandaa video. Jaribu tena.'
+  }
+}
+
+function saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 15000)
+}
+
 function ShareSheet({ video, onClose }) {
   const [copied, setCopied] = useState(false)
+  const [dl, setDl] = useState(IDLE)
+  const abortRef = useRef(null)
+
+  const busy = dl.status === 'working'
 
   // BASE_URL ni "/talent-flex-/" mtandaoni na "/" kwenye kompyuta yako
   const link = `${window.location.origin}${import.meta.env.BASE_URL}?v=${video.id}`
@@ -76,14 +118,27 @@ function ShareSheet({ video, onClose }) {
 
   const canNativeShare = typeof navigator !== 'undefined' && Boolean(navigator.share)
 
+  // Usifunge paneli wakati video inaandaliwa (tumia Ghairi)
+  const requestClose = () => {
+    if (busy) return
+    onClose()
+  }
+
   // Funga kwa kubonyeza Esc
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && !busy) onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, busy])
+
+  // Paneli ikiondoka, sitisha kuandaa video
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) abortRef.current.abort()
+    }
+  }, [])
 
   const openUrl = (url) => {
     window.open(url, '_blank', 'noopener,noreferrer')
@@ -115,8 +170,59 @@ function ShareSheet({ video, onClose }) {
     }
   }
 
+  const startDownload = async () => {
+    if (busy) return
+
+    if (!video.videoUrl) {
+      setDl({
+        status: 'error',
+        progress: 0,
+        message: 'Video hii ni ya mfano na haina faili ya kupakua. Jaribu video uliyopakia mwenyewe.'
+      })
+      return
+    }
+
+    const controller = new AbortController()
+    abortRef.current = controller
+    setDl({ status: 'working', progress: 0, message: '' })
+
+    try {
+      const { blob, ext } = await downloadVideoWithLogo({
+        videoUrl: video.videoUrl,
+        username: video.username,
+        logoUrl: `${import.meta.env.BASE_URL}logo.png`,
+        onProgress: (p) =>
+          setDl(prev => (prev.status === 'working' ? { ...prev, progress: p } : prev)),
+        signal: controller.signal
+      })
+
+      const who = video.username.replace('@', '')
+      saveBlob(blob, `TalentFlex_${who}_${video.id}.${ext}`)
+
+      setDl({
+        status: 'done',
+        progress: 1,
+        message: `Video imehifadhiwa (.${ext}). Itafute kwenye Downloads au Vipakuliwa.`
+      })
+    } catch (err) {
+      if (err && err.name === 'AbortError') {
+        setDl(IDLE)
+      } else {
+        setDl({ status: 'error', progress: 0, message: errorText(err) })
+      }
+    } finally {
+      abortRef.current = null
+    }
+  }
+
+  const cancelDownload = () => {
+    if (abortRef.current) abortRef.current.abort()
+  }
+
+  const percent = Math.round(dl.progress * 100)
+
   return createPortal(
-    <div className="share-backdrop" onClick={onClose}>
+    <div className="share-backdrop" onClick={requestClose}>
       <div
         className="share-sheet"
         onClick={(e) => e.stopPropagation()}
@@ -127,7 +233,12 @@ function ShareSheet({ video, onClose }) {
 
         <div className="share-header">
           <h3>Shiriki video</h3>
-          <button className="share-close" onClick={onClose} aria-label="Funga">
+          <button
+            className="share-close"
+            onClick={requestClose}
+            aria-label="Funga"
+            disabled={busy}
+          >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -175,6 +286,11 @@ function ShareSheet({ video, onClose }) {
             <span>{copied ? 'Imenakiliwa' : 'Nakili link'}</span>
           </button>
 
+          <button className="share-option" onClick={startDownload} disabled={busy}>
+            <span className="share-circle download"><DownloadIcon /></span>
+            <span>Download</span>
+          </button>
+
           {canNativeShare && (
             <button className="share-option" onClick={nativeShare}>
               <span className="share-circle more"><MoreIcon /></span>
@@ -182,6 +298,37 @@ function ShareSheet({ video, onClose }) {
             </button>
           )}
         </div>
+
+        {dl.status === 'working' && (
+          <div className="dl-panel">
+            <p className="dl-title">Inaandaa video yenye logo... {percent}%</p>
+            <div className="dl-bar">
+              <span style={{ width: `${percent}%` }} />
+            </div>
+            <p className="dl-hint">
+              Usitoke kwenye ukurasa huu na usizime skrini hadi ikamilike.
+            </p>
+            <div className="dl-actions">
+              <button className="dl-cancel" onClick={cancelDownload}>
+                Ghairi
+              </button>
+            </div>
+          </div>
+        )}
+
+        {dl.status === 'done' && (
+          <div className="dl-panel done">
+            <p className="dl-title">Imekamilika</p>
+            <p className="dl-hint">{dl.message}</p>
+          </div>
+        )}
+
+        {dl.status === 'error' && (
+          <div className="dl-panel error">
+            <p className="dl-title">Haikufanikiwa</p>
+            <p className="dl-hint">{dl.message}</p>
+          </div>
+        )}
 
         <div className="share-link-box">
           <span className="share-link-text">{link}</span>
