@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { VideoProvider } from './context/VideoContext'
 import { ChatProvider } from './context/ChatContext'
 import Feed from './pages/Feed'
@@ -11,8 +11,10 @@ import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import Upload from './pages/Upload'
 import Admin from './pages/Admin'
+import Auth from './pages/Auth'
 import Navbar from './components/Navbar'
 import Splash from './components/Splash'
+import { getCurrent, isOwner } from './utils/auth'
 
 const SPLASH_MS = 2500
 const FADE_MS = 500
@@ -30,6 +32,23 @@ function App() {
     }
   }, [])
 
+  const current = getCurrent()
+  const owner = isOwner(current)
+
+  // Hujaingia: onyesha ukurasa wa kuingia au kujisajili
+  if (!current) {
+    return (
+      <>
+        {phase !== 'show' && (
+          <div className="app-container">
+            <Auth mode="first" />
+          </div>
+        )}
+        {phase !== 'done' && <Splash fading={phase === 'fade'} />}
+      </>
+    )
+  }
+
   return (
     <VideoProvider>
       <ChatProvider>
@@ -45,8 +64,12 @@ function App() {
                 <Route path="/messages/:user" element={<Chat />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/add-account" element={<Auth mode="add" />} />
                 <Route path="/upload" element={<Upload />} />
-                <Route path="/admin" element={<Admin />} />
+                <Route
+                  path="/admin"
+                  element={owner ? <Admin /> : <Navigate to="/" replace />}
+                />
               </Routes>
               <Navbar />
             </div>

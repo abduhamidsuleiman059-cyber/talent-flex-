@@ -1,0 +1,83 @@
+/* Upau wa maendeleo wa video */
+.vp-wrap {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+  z-index: 4;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vp-track {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.28);
+  transition: height 0.15s ease;
+}
+
+.vp-fill {
+  position: relative;
+  height: 100%;
+  border-radius: 3px;
+  background: #fff;
+  transition: width 0.25s linear;
+}
+
+.vp-thumb {
+  position: absolute;
+  top: 50%;
+  right: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(-50%) scale(0.6);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.vp-wrap.active .vp-track {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.vp-wrap.active .vp-fill {
+  transition: none;
+  border-radius: 4px;
+}
+
+.vp-wrap.active .vp-thumb {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+.vp-time {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  z-index: 5;
+  padding: 8px 18px;
+  border-radius: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.vp-time span {
+  font-weight: 500;
+  opacity: 0.65;
+}

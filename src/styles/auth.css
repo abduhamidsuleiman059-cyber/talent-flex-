@@ -1,0 +1,186 @@
+.au-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 34px) 22px
+    calc(30px + env(safe-area-inset-bottom, 0px));
+  background: #0d0d0d;
+  color: #fff;
+}
+
+.au-brand {
+  margin: 0;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #22d3ee, #7c3aed, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.au-tagline {
+  margin: 6px 0 24px;
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.au-tabs {
+  display: flex;
+  margin-bottom: 18px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.au-tab {
+  flex: 1;
+  height: 40px;
+  border: none;
+  border-radius: 11px;
+  background: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.au-tab.active {
+  background: linear-gradient(90deg, #ffb800, #ff5c00);
+  color: #0d0d0d;
+}
+
+.au-note {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 184, 0, 0.35);
+  border-radius: 12px;
+  background: rgba(255, 184, 0, 0.08);
+  color: #ffc94d;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.au-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.au-chip {
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.au-chip:active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.au-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.au-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.au-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.au-input-wrap {
+  position: relative;
+}
+
+.au-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.au-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.au-input:focus {
+  border-color: #ffb800;
+}
+
+.au-input.has-eye {
+  padding-right: 46px;
+}
+
+.au-eye {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 46px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+
+.au-error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #ff7a7a;
+}
+
+.au-submit {
+  height: 50px;
+  margin-top: 4px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #ffb800, #ff5c00);
+  color: #0d0d0d;
+  font-size: 15.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.au-submit:active {
+  transform: scale(0.98);
+}
+
+.au-submit:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.au-cancel {
+  margin-top: 4px;
+  padding: 12px;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}

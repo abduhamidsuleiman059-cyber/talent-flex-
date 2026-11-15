@@ -1,0 +1,194 @@
+.st-account {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+}
+
+.st-avatar {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.st-account-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.st-account-name {
+  display: block;
+  font-size: 16px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-account-handle {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.st-owner {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: rgba(255, 184, 0, 0.15);
+  color: #ffb800;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.st-row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.st-mini-avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.st-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
+.st-row-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.st-form {
+  padding: 14px 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.st-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.st-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.st-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+}
+
+.st-input:focus {
+  border-color: #ffb800;
+}
+
+.st-error {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #ff7a7a;
+}
+
+.st-primary {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ffb800, #ff5c00);
+  color: #0d0d0d;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.st-primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.st-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.st-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.st-form-actions .st-btn {
+  flex: 1;
+}
+
+.st-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.st-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.st-toggle.on {
+  background: #ff7a1a;
+}
+
+.st-toggle.on::after {
+  transform: translateX(20px);
+}
+
+.st-card .st-static {
+  cursor: default;
+}

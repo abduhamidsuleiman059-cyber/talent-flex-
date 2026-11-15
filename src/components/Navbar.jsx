@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useChat } from '../context/ChatContext'
 import { setPendingFile } from '../utils/pendingFile'
+import { getCurrent, isOwner } from '../utils/auth'
 import '../styles/navbar.css'
 import '../styles/messages.css'
 import '../styles/navbar-tiktok.css'
@@ -24,6 +25,8 @@ function Navbar() {
   const longPressed = useRef(false)
   const fileRef = useRef(null)
 
+  const owner = isOwner(getCurrent())
+
   // Inasikiliza scroll ya Feed kila ukurasa unapobadilika
   useEffect(() => {
     const feedEl = document.querySelector('.feed-scroll')
@@ -41,10 +44,11 @@ function Navbar() {
     return () => feedEl.removeEventListener('scroll', handleScroll)
   }, [location.pathname])
 
-  // Bonyeza kwa muda mrefu kitufe cha Profile kufungua Admin
+  // Bonyeza kwa muda mrefu kitufe cha Profile kufungua Admin (kwa msimamizi tu)
   const startPress = () => {
     longPressed.current = false
     clearTimeout(pressTimer.current)
+    if (!owner) return
     pressTimer.current = setTimeout(() => {
       longPressed.current = true
       navigate('/admin')
@@ -79,13 +83,20 @@ function Navbar() {
 
   const path = location.pathname
 
-  // Navbar ijifiche ndani ya mazungumzo na kwenye ukurasa wa kuhariri video
-  if (path.startsWith('/messages/') || path === '/upload') return null
+  // Navbar ijifiche ndani ya mazungumzo, kuhariri video na kuongeza akaunti
+  if (
+    path.startsWith('/messages/') ||
+    path === '/upload' ||
+    path === '/add-account'
+  ) {
+    return null
+  }
 
   const onHome = path === '/'
   const onFriends = path === '/friends'
   const onInbox = path.startsWith('/messages')
-  const onProfile = path === '/profile' || path === '/admin'
+  const onProfile =
+    path === '/profile' || path === '/admin' || path === '/settings'
 
   return (
     <nav className={faded ? 'navbar faded' : 'navbar'}>

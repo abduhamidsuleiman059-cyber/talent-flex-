@@ -4,6 +4,7 @@ import CommentsSheet from './CommentsSheet'
 import ShareSheet from './ShareSheet'
 import { displayName } from '../utils/displayName'
 import { getFilterCss } from '../utils/videoFilters'
+import { getSound, setSound, subscribeSound } from '../utils/soundStore'
 import '../styles/videocard.css'
 import '../styles/videocard-video.css'
 import '../styles/videocard-like.css'
@@ -11,6 +12,7 @@ import '../styles/videocard-sound.css'
 import '../styles/avatar.css'
 import '../styles/videocard-playpause.css'
 import '../styles/videocard-name.css'
+import '../styles/videocard-progress.css'
 
 const ME = '@wewe'
 
@@ -36,28 +38,21 @@ function avatarLetter(username) {
   return username.replace('@', '').charAt(0).toUpperCase() || '?'
 }
 
-// Hali ya sauti inayoshirikiwa na kadi zote
-let soundOn = true
-const listeners = new Set()
-
-function subscribe(cb) {
-  listeners.add(cb)
-  return () => listeners.delete(cb)
-}
-
-function getSnapshot() {
-  return soundOn
-}
-
-function setSound(value) {
-  soundOn = value
-  listeners.forEach(l => l())
-}
-
 function formatCount(n) {
   if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M'
   if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K'
   return String(n)
+}
+
+function fmtTime(sec) {
+  const total = Math.max(0, Math.round(sec))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 function VideoCard({ video }) {
@@ -67,11 +62,17 @@ function VideoCard({ video }) {
   const [showCheck, setShowCheck] = useState(false)
   // Ikoni ya katikati: 'play' (imesimama) | 'pause' (inaendelea, inapotea) | null
   const [indicator, setIndicator] = useState(null)
+  // Upau wa maendeleo
+  const [progress, setProgress] = useState(0)
+  const [scrub, setScrub] = useState(null)
   const cardRef = useRef(null)
   const videoRef = useRef(null)
+  const barRef = useRef(null)
   const checkTimer = useRef(null)
   const indicatorTimer = useRef(null)
-  const sound = useSyncExternalStore(subscribe, getSnapshot)
+  const scrubbingRef = useRef(false)
+  const wasPlayingRef = useRef(false)
+  const sound = useSyncExternalStore(subscribeSound, getSound)
 
   const name = displayName(video.username)
 
@@ -113,7 +114,7 @@ function VideoCard({ video }) {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.muted = !getSnapshot()
+          el.muted = !getSound()
           el.play().catch(() => {
             // Kivinjari kimekataa sauti, cheza bila sauti
             el.muted = true
@@ -138,20 +139,39 @@ function VideoCard({ video }) {
     if (el) el.muted = !sound
   }, [sound])
 
+  // Mwanzo na mwisho wa sehemu inayochezwa
+  const clipRange = (el) => {
+    if (!el) return null
+    const start = trimStart
+    const end = trimEnd || el.duration
+    if (!Number.isFinite(end) || end <= start) return null
+    return { start, end }
+  }
+
   // Anza kwenye mwanzo wa sehemu iliyochaguliwa
   const handleLoadedMetadata = () => {
     const el = videoRef.current
     if (el && trimStart > 0) el.currentTime = trimStart
+    setProgress(0)
   }
 
-  // Rudia ndani ya sehemu iliyochaguliwa
+  // Rudia ndani ya sehemu iliyochaguliwa na sasisha upau
   const handleTimeUpdate = () => {
     const el = videoRef.current
     if (!el) return
+
     if (trimEnd && el.currentTime >= trimEnd) {
       el.currentTime = trimStart
     } else if (trimStart && el.currentTime < trimStart - 0.2) {
       el.currentTime = trimStart
+    }
+
+    if (!scrubbingRef.current) {
+      const range = clipRange(el)
+      if (range) {
+        const p = (el.currentTime - range.start) / (range.end - range.start)
+        setProgress(Math.min(1, Math.max(0, p)))
+      }
     }
   }
 
@@ -174,11 +194,65 @@ function VideoCard({ video }) {
   // Kitufe cha spika: washa / zima sauti
   const toggleSound = () => {
     const el = videoRef.current
-    const next = !getSnapshot()
+    const next = !getSound()
     setSound(next)
     if (el) {
       el.muted = !next
     }
+  }
+
+  // ===== Upau wa maendeleo: kugusa na kuburuta =====
+
+  const applyScrub = (clientX) => {
+    const el = videoRef.current
+    const bar = barRef.current
+    const range = clipRange(el)
+    if (!el || !bar || !range) return
+
+    const rect = bar.getBoundingClientRect()
+    const p = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    const total = range.end - range.start
+
+    el.currentTime = range.start + p * total
+    setProgress(p)
+    setScrub({ time: p * total, total })
+  }
+
+  const handleBarDown = (e) => {
+    const el = videoRef.current
+    if (!el || !clipRange(el)) return
+    e.stopPropagation()
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // hakuna cha kufanya
+    }
+
+    scrubbingRef.current = true
+    wasPlayingRef.current = !el.paused
+    el.pause()
+    applyScrub(e.clientX)
+  }
+
+  const handleBarMove = (e) => {
+    if (!scrubbingRef.current) return
+    applyScrub(e.clientX)
+  }
+
+  const handleBarUp = (e) => {
+    if (!scrubbingRef.current) return
+    scrubbingRef.current = false
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      // hakuna cha kufanya
+    }
+
+    setScrub(null)
+    const el = videoRef.current
+    if (el && wasPlayingRef.current) el.play().catch(() => {})
   }
 
   return (
@@ -218,11 +292,39 @@ function VideoCard({ video }) {
         </div>
       )}
 
+      {scrub && (
+        <div className="vp-time">
+          {fmtTime(scrub.time)} <span>/ {fmtTime(scrub.total)}</span>
+        </div>
+      )}
+
       <div className="video-overlay">
         <div className="video-info">
           <h3 className="video-name">{name}</h3>
         </div>
       </div>
+
+      {video.videoUrl && (
+        <div
+          className={scrub ? 'vp-wrap active' : 'vp-wrap'}
+          ref={barRef}
+          onPointerDown={handleBarDown}
+          onPointerMove={handleBarMove}
+          onPointerUp={handleBarUp}
+          onPointerCancel={handleBarUp}
+          role="slider"
+          aria-label="Maendeleo ya video"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress * 100)}
+        >
+          <div className="vp-track">
+            <div className="vp-fill" style={{ width: `${progress * 100}%` }}>
+              <span className="vp-thumb" />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="video-actions">
         <div className="avatar-wrap">
