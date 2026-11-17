@@ -118,7 +118,8 @@ export function VideoProvider({ children }) {
         trimStart: v.trimStart,
         trimEnd: v.trimEnd,
         filter: v.filter,
-        allowComments: v.allowComments
+        allowComments: v.allowComments,
+        cover: v.cover
       }))
     try {
       localStorage.setItem(META_KEY, JSON.stringify(meta))

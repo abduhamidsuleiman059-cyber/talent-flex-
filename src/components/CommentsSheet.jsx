@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useVideos } from '../context/VideoContext'
+import Avatar from './Avatar'
+import { displayName } from '../utils/displayName'
 import '../styles/comments.css'
 
 const ME = '@wewe'
@@ -102,14 +104,14 @@ function CommentRow({ c, isReply, liked, onLike, onReply, onDelete }) {
 
   return (
     <div className={isReply ? 'comment-item is-reply' : 'comment-item'}>
-      <div className="comment-avatar">
-        {c.username.replace('@', '').charAt(0).toUpperCase()}
-      </div>
+      <Avatar username={c.username} size={isReply ? 26 : 34} />
 
       <div className="comment-body">
-        <span className="comment-user">{c.username}</span>
+        <span className="comment-user">{displayName(c.username)}</span>
         <p className="comment-text">
-          {c.replyTo && <span className="comment-mention">{c.replyTo} </span>}
+          {c.replyTo && (
+            <span className="comment-mention">{displayName(c.replyTo)} </span>
+          )}
           {c.text}
         </p>
 
@@ -297,7 +299,7 @@ function CommentsSheet({ video, onClose }) {
         {replyTo && (
           <div className="reply-banner">
             <span>
-              Unamjibu <strong>{replyTo.username}</strong>
+              Unamjibu <strong>{displayName(replyTo.username)}</strong>
             </span>
             <button
               className="reply-cancel"

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useVideos } from '../context/VideoContext'
 import CommentsSheet from './CommentsSheet'
 import ShareSheet from './ShareSheet'
+import Avatar from './Avatar'
 import { displayName } from '../utils/displayName'
 import { getFilterCss } from '../utils/videoFilters'
 import { getSound, setSound, subscribeSound } from '../utils/soundStore'
@@ -15,28 +16,6 @@ import '../styles/videocard-name.css'
 import '../styles/videocard-progress.css'
 
 const ME = '@wewe'
-
-// Rangi za avatar, kila jina linapata rangi yake ile ile kila mara
-const AVATAR_COLORS = [
-  'linear-gradient(135deg, #ff9a1f, #ff5e3a)',
-  'linear-gradient(135deg, #22d3ee, #3b82f6)',
-  'linear-gradient(135deg, #a855f7, #ec4899)',
-  'linear-gradient(135deg, #10b981, #06b6d4)',
-  'linear-gradient(135deg, #f59e0b, #ef4444)',
-  'linear-gradient(135deg, #6366f1, #8b5cf6)'
-]
-
-function avatarGradient(username) {
-  let hash = 0
-  for (let i = 0; i < username.length; i++) {
-    hash = (hash * 31 + username.charCodeAt(i)) >>> 0
-  }
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
-}
-
-function avatarLetter(username) {
-  return username.replace('@', '').charAt(0).toUpperCase() || '?'
-}
 
 function formatCount(n) {
   if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M'
@@ -328,12 +307,7 @@ function VideoCard({ video }) {
 
       <div className="video-actions">
         <div className="avatar-wrap">
-          <div
-            className="avatar-circle"
-            style={{ background: avatarGradient(video.username) }}
-          >
-            {avatarLetter(video.username)}
-          </div>
+          <Avatar username={video.username} size={48} />
 
           {showBadge && (
             <button

@@ -11,13 +11,15 @@ import {
   deleteAccount,
   clearAccountData
 } from '../utils/auth'
+import { getAccountAvatar } from '../utils/accountAvatar'
+import { getMyAvatar } from '../utils/displayName'
 import { getSoundDefault, setSoundDefault } from '../utils/soundStore'
-import { avatarGradient, avatarLetter } from '../utils/avatar'
+import Avatar from '../components/Avatar'
 import '../styles/settings.css'
 import '../styles/settings-accounts.css'
 
 const PROFILE_KEY = 'talentflex-profile'
-const APP_VERSION = '0.2 (demo)'
+const APP_VERSION = '0.3 (demo)'
 
 function BackIcon() {
   return (
@@ -164,12 +166,12 @@ function Settings() {
         <h3 className="st-group-title">Akaunti</h3>
         <div className="st-card">
           <div className="st-account">
-            <span
-              className="st-avatar"
-              style={{ background: avatarGradient(`@${current.username}`) }}
-            >
-              {avatarLetter(myName)}
-            </span>
+            <Avatar
+              username={`@${current.username}`}
+              src={getMyAvatar()}
+              label={myName}
+              size={52}
+            />
             <span className="st-account-main">
               <span className="st-account-name">{myName}</span>
               <span className="st-account-handle">@{current.username}</span>
@@ -197,12 +199,12 @@ function Settings() {
                     onClick={() => handleSwitch(a.id)}
                   >
                     <span className="st-row-left">
-                      <span
-                        className="st-mini-avatar"
-                        style={{ background: avatarGradient(`@${a.username}`) }}
-                      >
-                        {avatarLetter(getAccountName(a))}
-                      </span>
+                      <Avatar
+                        username={`@${a.username}`}
+                        src={getAccountAvatar(a)}
+                        label={getAccountName(a)}
+                        size={36}
+                      />
                       <span className="st-row-text">
                         <span>{getAccountName(a)}</span>
                         <span className="st-row-sub">@{a.username}</span>

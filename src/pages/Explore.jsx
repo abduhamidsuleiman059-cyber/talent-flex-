@@ -156,7 +156,14 @@ function Explore() {
                 onClick={() => setSelectedId(video.id)}
                 aria-label={`Fungua video ya ${displayName(video.username)}`}
               >
-                {video.videoUrl ? (
+                {video.cover ? (
+                  <img
+                    className="explore-thumb"
+                    src={video.cover}
+                    alt=""
+                    draggable={false}
+                  />
+                ) : video.videoUrl ? (
                   <video
                     className="explore-thumb"
                     src={`${video.videoUrl}#t=${video.trimStart || 0.1}`}

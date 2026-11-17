@@ -4,6 +4,8 @@ const OUTRO_SECONDS = 2.5
 const MAX_SIDE = 1280
 // Rangi ya mandhari ya skrini ya logo
 const OUTRO_BG = '#0d0d0d'
+// Urefu wa juu wa sehemu inayopakuliwa (sekunde): dakika 5
+export const MAX_DOWNLOAD_SECONDS = 5 * 60
 
 function makeError(code) {
   const e = new Error(code)
@@ -52,6 +54,30 @@ function loadVideo(url) {
   })
 }
 
+// Peleka video kwenye sekunde fulani na subiri ifike
+function seekTo(video, t) {
+  return new Promise(resolve => {
+    if (Math.abs(video.currentTime - t) < 0.05) {
+      resolve()
+      return
+    }
+
+    let done = false
+
+    const finish = () => {
+      if (done) return
+      done = true
+      video.removeEventListener('seeked', finish)
+      clearTimeout(timer)
+      resolve()
+    }
+
+    const timer = setTimeout(finish, 2500)
+    video.addEventListener('seeked', finish)
+    video.currentTime = t
+  })
+}
+
 function drawOutro(ctx, cw, ch, logo, username, alpha) {
   ctx.globalAlpha = 1
   ctx.fillStyle = OUTRO_BG
@@ -94,13 +120,16 @@ function drawOutro(ctx, cw, ch, logo, username, alpha) {
 }
 
 /**
- * Inaandaa video mpya: video asili + skrini ya logo mwishoni.
- * Inarudisha { blob, ext }.
+ * Inaandaa video mpya: sehemu iliyochaguliwa ya video + filta + skrini ya logo mwishoni.
+ * Inarudisha { blob, ext, filterApplied }.
  */
 export async function downloadVideoWithLogo({
   videoUrl,
   username,
   logoUrl,
+  trimStart = 0,
+  trimEnd = 0,
+  filter = 'none',
   onProgress,
   signal
 }) {
@@ -112,6 +141,18 @@ export async function downloadVideoWithLogo({
   throwIfAborted(signal)
 
   const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm'
+
+  // Sehemu ya video itakayopakuliwa
+  const fullDuration = Number.isFinite(video.duration) ? video.duration : 0
+  const start = Math.max(0, Math.min(trimStart || 0, Math.max(0, fullDuration - 0.1)))
+  const end =
+    trimEnd && trimEnd > start
+      ? Math.min(trimEnd, fullDuration || trimEnd)
+      : fullDuration
+  const endTime = end > start ? end : Infinity
+  const clipLength = end > start ? end - start : 0
+
+  if (clipLength > MAX_DOWNLOAD_SECONDS) throw makeError('TOO_LONG')
 
   // Ukubwa wa video ya mwisho (namba shufwa)
   const srcW = video.videoWidth || 720
@@ -126,6 +167,15 @@ export async function downloadVideoWithLogo({
   const ctx = canvas.getContext('2d')
   ctx.fillStyle = OUTRO_BG
   ctx.fillRect(0, 0, cw, ch)
+
+  // Filta: inafanya kazi kwenye Chrome na vivinjari vingi vya Android
+  const filterRequested = Boolean(filter) && filter !== 'none'
+  const filterSupported = 'filter' in ctx
+  const useFilter = filterRequested && filterSupported
+  const filterApplied = !filterRequested || filterSupported
+
+  await seekTo(video, start)
+  throwIfAborted(signal)
 
   const stream = canvas.captureStream(30)
 
@@ -155,8 +205,7 @@ export async function downloadVideoWithLogo({
     if (e.data && e.data.size > 0) chunks.push(e.data)
   }
 
-  const duration = Number.isFinite(video.duration) ? video.duration : 0
-  const total = duration + OUTRO_SECONDS
+  const total = clipLength + OUTRO_SECONDS
 
   return new Promise((resolve, reject) => {
     let rafId = 0
@@ -202,21 +251,30 @@ export async function downloadVideoWithLogo({
       cleanup()
       resolve({
         blob: new Blob(chunks, { type: mimeType.split(';')[0] }),
-        ext
+        ext,
+        filterApplied
       })
     }
 
     recorder.onerror = () => fail(makeError('RECORD_FAILED'))
     video.onerror = () => fail(makeError('LOAD_FAILED'))
 
-    video.onended = () => {
+    const beginOutro = () => {
+      if (phase === 'outro') return
       phase = 'outro'
       outroStart = performance.now()
+      try {
+        video.pause()
+      } catch {
+        // hakuna cha kufanya
+      }
     }
+
+    video.onended = beginOutro
 
     const report = (seconds) => {
       if (onProgress && total > 0) {
-        onProgress(Math.min(1, seconds / total))
+        onProgress(Math.min(1, Math.max(0, seconds / total)))
       }
     }
 
@@ -224,13 +282,21 @@ export async function downloadVideoWithLogo({
       if (finished) return
 
       if (phase === 'video') {
+        if (filterSupported) ctx.filter = useFilter ? filter : 'none'
         ctx.drawImage(video, 0, 0, cw, ch)
-        report(video.currentTime)
+        report(video.currentTime - start)
+
+        if (video.currentTime >= endTime - 0.04 || video.ended) {
+          beginOutro()
+        }
       } else {
+        // Skrini ya logo haipaswi kupata filta
+        if (filterSupported) ctx.filter = 'none'
+
         const elapsed = (performance.now() - outroStart) / 1000
         const alpha = Math.min(1, elapsed / 0.4)
         drawOutro(ctx, cw, ch, logo, username, alpha)
-        report(duration + elapsed)
+        report(clipLength + elapsed)
 
         if (elapsed >= OUTRO_SECONDS) {
           try {

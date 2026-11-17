@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
 import { getPendingFile, setPendingFile } from '../utils/pendingFile'
 import { FILTERS, getFilterCss } from '../utils/videoFilters'
+import { frameDataUrl, captureFrame, cropToDataUrl } from '../utils/imageTools'
 import '../styles/upload-editor.css'
+import '../styles/upload-cover.css'
 
 // Muda wa juu wa video (sekunde): dakika 30
 const MAX_SECONDS = 30 * 60
@@ -90,7 +92,7 @@ function Upload() {
   const [duration, setDuration] = useState(0)
   const [loadError, setLoadError] = useState('')
 
-  // edit | details | done
+  // edit | details | cover | done
   const [step, setStep] = useState('edit')
   // trim | filter
   const [tab, setTab] = useState('trim')
@@ -103,11 +105,22 @@ function Upload() {
   const [muted, setMuted] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [savedOk, setSavedOk] = useState(true)
+  const [cover, setCover] = useState('')
+  const [coverTouched, setCoverTouched] = useState(false)
+  const [coverTime, setCoverTime] = useState(0)
+  const [coverError, setCoverError] = useState('')
 
   const pickerRef = useRef(null)
+  const coverImgRef = useRef(null)
   const videoRef = useRef(null)
-  const thumbRef = useRef(null)
+  const coverVideoRef = useRef(null)
   const publishedUrlRef = useRef(null)
+
+  const clipLength = Math.max(0, trimEnd - trimStart)
+  const minGap = Math.min(MIN_CLIP, duration)
+  const sliderStep = duration > 120 ? 1 : 0.1
+  const filterCss = getFilterCss(filterId)
+  const filterLabel = (FILTERS.find(f => f.id === filterId) || FILTERS[0]).label
 
   // Pokea video iliyochaguliwa kwenye navbar (kila unapobonyeza +)
   useEffect(() => {
@@ -133,6 +146,9 @@ function Upload() {
     setAllowComments(true)
     setPlaying(false)
     setSavedOk(true)
+    setCover('')
+    setCoverTouched(false)
+    setCoverError('')
 
     probe.onloadedmetadata = () => {
       if (cancelled) return
@@ -176,11 +192,21 @@ function Upload() {
     if (videoRef.current) videoRef.current.muted = muted
   }, [muted])
 
-  const clipLength = Math.max(0, trimEnd - trimStart)
-  const minGap = Math.min(MIN_CLIP, duration)
-  const sliderStep = duration > 120 ? 1 : 0.1
-  const filterCss = getFilterCss(filterId)
-  const filterLabel = (FILTERS.find(f => f.id === filterId) || FILTERS[0]).label
+  // Jalada la moja kwa moja: fremu ya kwanza ya sehemu iliyochaguliwa (kama hujachagua lako)
+  useEffect(() => {
+    if (step !== 'details' || !url || coverTouched) return
+
+    let cancelled = false
+    const time = Math.min(trimStart + 0.3, Math.max(trimStart, trimEnd - 0.1))
+
+    frameDataUrl(url, time, filterCss).then(data => {
+      if (!cancelled && data) setCover(data)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [step, url, coverTouched, trimStart, trimEnd, filterCss])
 
   const discard = () => {
     setPendingFile(null)
@@ -249,6 +275,50 @@ function Upload() {
     seekPreview(Math.max(trimStart, v - 1.5))
   }
 
+  // ===== Jalada =====
+
+  const openCoverStep = () => {
+    setCoverError('')
+    setCoverTime(trimStart)
+    setStep('cover')
+  }
+
+  const handleCoverSlider = (value) => {
+    setCoverTime(value)
+    if (coverVideoRef.current) coverVideoRef.current.currentTime = value
+  }
+
+  const confirmFrame = async () => {
+    const data = await captureFrame(coverVideoRef.current, filterCss)
+    if (data) {
+      setCover(data)
+      setCoverTouched(true)
+    }
+    setStep('details')
+  }
+
+  const handleCoverImage = async (e) => {
+    const picked = e.target.files && e.target.files[0]
+    e.target.value = ''
+    if (!picked) return
+
+    setCoverError('')
+
+    if (!picked.type.startsWith('image/')) {
+      setCoverError('Chagua picha (JPG au PNG).')
+      return
+    }
+
+    try {
+      const data = await cropToDataUrl(picked, 270, 480, 0.8)
+      setCover(data)
+      setCoverTouched(true)
+      setStep('details')
+    } catch {
+      setCoverError('Imeshindwa kusoma picha hii. Jaribu nyingine.')
+    }
+  }
+
   // ===== Kuchapisha =====
 
   const addTag = (tag) => {
@@ -275,7 +345,8 @@ function Upload() {
       trimStart: trimStart > 0.05 ? trimStart : 0,
       trimEnd: trimEnd < duration - 0.05 ? trimEnd : 0,
       filter: filterId,
-      allowComments
+      allowComments,
+      cover
     })
 
     setSavedOk(saved)
@@ -365,6 +436,66 @@ function Upload() {
         </div>
       </div>
     )
+  } else if (step === 'cover') {
+    content = (
+      <>
+        <div className="ed-top">
+          <button
+            className="ed-icon-btn"
+            onClick={() => setStep('details')}
+            aria-label="Rudi"
+          >
+            <BackIcon />
+          </button>
+          <h2 className="ed-title">Jalada</h2>
+          <span className="ed-top-space" />
+        </div>
+
+        <div className="ed-stage">
+          <video
+            ref={coverVideoRef}
+            className="ed-video"
+            src={url}
+            muted
+            playsInline
+            preload="auto"
+            style={{ filter: filterCss }}
+            onLoadedMetadata={(e) => {
+              e.currentTarget.currentTime = coverTime
+            }}
+          />
+        </div>
+
+        <div className="ed-panel">
+          <div className="ed-trim-info">
+            <span>Chagua fremu ya jalada</span>
+            <b>{fmt(coverTime - trimStart)}</b>
+          </div>
+
+          <div className="ed-trim-row">
+            <input
+              type="range"
+              className="ed-range"
+              min={trimStart}
+              max={Math.max(trimStart + 0.1, trimEnd - 0.1)}
+              step={sliderStep}
+              value={coverTime}
+              onChange={(e) => handleCoverSlider(Number(e.target.value))}
+            />
+          </div>
+
+          <button className="ed-ghost wide" onClick={() => coverImgRef.current && coverImgRef.current.click()}>
+            Chagua picha kutoka kwenye simu
+          </button>
+
+          {coverError && <p className="ed-cover-error">{coverError}</p>}
+
+          <button className="ed-primary" onClick={confirmFrame}>
+            Tumia jalada hili
+          </button>
+        </div>
+      </>
+    )
   } else if (step === 'details') {
     content = (
       <>
@@ -383,26 +514,22 @@ function Upload() {
 
         <div className="ed-details">
           <div className="ed-desc-row">
-            <video
-              ref={thumbRef}
-              className="ed-thumb"
-              src={url}
-              muted
-              autoPlay
-              loop
-              playsInline
-              style={{ filter: filterCss }}
-              onLoadedMetadata={() => {
-                if (thumbRef.current) thumbRef.current.currentTime = trimStart
-              }}
-              onTimeUpdate={() => {
-                const el = thumbRef.current
-                if (!el) return
-                if (el.currentTime >= trimEnd - 0.05 || el.currentTime < trimStart - 0.3) {
-                  el.currentTime = trimStart
-                }
-              }}
-            />
+            <button
+              type="button"
+              className="ed-cover-btn"
+              onClick={openCoverStep}
+              disabled={publishing}
+              aria-label="Hariri jalada"
+            >
+              {cover ? (
+                <img className="ed-thumb" src={cover} alt="Jalada la video" />
+              ) : (
+                <span className="ed-cover-loading">
+                  <span className="ed-spinner" />
+                </span>
+              )}
+              <span className="ed-cover-label">Hariri jalada</span>
+            </button>
 
             <textarea
               className="ed-textarea"
@@ -537,27 +664,7 @@ function Upload() {
                 />
               </div>
 
-              <div className="ed-trim-row">
-                <span className="ed-trim-label">Mwanzo</span>
-                <button className="ed-nudge" onClick={() => setStart(trimStart - 1)} aria-label="Rudisha sekunde 1">
-                  −
-                </button>
-                <input
-                  type="range"
-                  className="ed-range"
-                  min="0"
-                  max={duration}
-                  step={sliderStep}
-                  value={trimStart}
-                  onChange={(e) => setStart(Number(e.target.value))}
-                />
-                <button className="ed-nudge" onClick={() => setStart(trimStart + 1)} aria-label="Songa sekunde 1">
-                  +
-                </button>
-                <b className="ed-time">{fmt(trimStart)}</b>
-              </div>
-
-              <div className="ed-trim-row">
+             <div className="ed-trim-row">
                 <span className="ed-trim-label">Mwisho</span>
                 <button className="ed-nudge" onClick={() => setEnd(trimEnd - 1)} aria-label="Rudisha sekunde 1">
                   −
@@ -611,6 +718,13 @@ function Upload() {
         accept="video/*"
         hidden
         onChange={handleLocalPick}
+      />
+      <input
+        ref={coverImgRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={handleCoverImage}
       />
     </div>
   )

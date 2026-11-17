@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
-import { avatarGradient, avatarLetter } from '../utils/avatar'
+import Avatar from '../components/Avatar'
+import { displayName } from '../utils/displayName'
 import '../styles/profile.css'
 import '../styles/friends.css'
 
@@ -44,22 +45,17 @@ function Friends() {
         <div className="follow-list">
           {followedUsers.map(name => (
             <div className="follow-row" key={name}>
-              <span
-                className="follow-avatar"
-                style={{ background: avatarGradient(name) }}
-              >
-                {avatarLetter(name)}
-              </span>
+              <Avatar username={name} size={46} />
 
               <span className="follow-main">
-                <span className="follow-name">{name}</span>
+                <span className="follow-name">{displayName(name)}</span>
                 <span className="follow-meta">{countFor(name)} video</span>
               </span>
 
               <button
                 className="follow-msg"
                 onClick={() => openChat(name)}
-                aria-label={`Mtumie ujumbe ${name}`}
+                aria-label={`Mtumie ujumbe ${displayName(name)}`}
               >
                 <ChatIcon />
               </button>
@@ -79,21 +75,16 @@ function Friends() {
 
       {suggestions.length === 0 ? (
         <p className="friends-empty">
-          Umewafuata wote waliopo kwa sasa. Wengine wakipakia vipaji, wataonekana hapa.
+          Umewafuata wote waliopo kwa sasa. Wengine wakipakia video, wataonekana hapa.
         </p>
       ) : (
         <div className="follow-list">
           {suggestions.map(name => (
             <div className="follow-row" key={name}>
-              <span
-                className="follow-avatar"
-                style={{ background: avatarGradient(name) }}
-              >
-                {avatarLetter(name)}
-              </span>
+              <Avatar username={name} size={46} />
 
               <span className="follow-main">
-                <span className="follow-name">{name}</span>
+                <span className="follow-name">{displayName(name)}</span>
                 <span className="follow-meta">{countFor(name)} video</span>
               </span>
 

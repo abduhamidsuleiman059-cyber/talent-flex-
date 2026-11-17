@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
 import VideoCard from '../components/VideoCard'
+import Avatar from '../components/Avatar'
 import { avatarGradient, avatarLetter } from '../utils/avatar'
+import { displayName } from '../utils/displayName'
+import { getFilterCss } from '../utils/videoFilters'
+import { cropToDataUrl } from '../utils/imageTools'
+import { getCurrent } from '../utils/auth'
 import '../styles/explore.css'
 import '../styles/profile.css'
 import '../styles/profile-cover.css'
@@ -26,38 +31,6 @@ function readProfile() {
     // tumia chaguo-msingi
   }
   return DEFAULT_PROFILE
-}
-
-// Kata picha katikati kwa ukubwa unaotakiwa na uipunguze (ili ihifadhike kwa urahisi)
-function cropToDataUrl(file, outW, outH, quality = 0.82) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file)
-    const img = new Image()
-
-    img.onload = () => {
-      const scale = Math.max(outW / img.width, outH / img.height)
-      const w = img.width * scale
-      const h = img.height * scale
-
-      const canvas = document.createElement('canvas')
-      canvas.width = outW
-      canvas.height = outH
-      const ctx = canvas.getContext('2d')
-      ctx.fillStyle = '#0d0d0d'
-      ctx.fillRect(0, 0, outW, outH)
-      ctx.drawImage(img, (outW - w) / 2, (outH - h) / 2, w, h)
-
-      URL.revokeObjectURL(url)
-      resolve(canvas.toDataURL('image/jpeg', quality))
-    }
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error('IMAGE_FAILED'))
-    }
-
-    img.src = url
-  })
 }
 
 function formatCount(n) {
@@ -138,7 +111,8 @@ function UsersIcon() {
   )
 }
 
-function CategoryGlyph({ category }) {
+// Ikoni kwenye video za mfano (zisizo na faili halisi)
+function TileGlyph({ category }) {
   if (category === 'ball') {
     return (
       <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -152,11 +126,18 @@ function CategoryGlyph({ category }) {
       </svg>
     )
   }
+  if (category === 'music') {
+    return (
+      <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 18V5l12-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="16" r="3" />
+      </svg>
+    )
+  }
   return (
-    <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" />
-      <circle cx="18" cy="16" r="3" />
+    <svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor">
+      <polygon points="7 4 20 12 7 20 7 4" />
     </svg>
   )
 }
@@ -164,6 +145,8 @@ function CategoryGlyph({ category }) {
 function Profile() {
   const navigate = useNavigate()
   const { videos, likedIds, followedUsers, toggleFollow } = useVideos()
+  const current = getCurrent()
+  const handle = current ? `@${current.username}` : ME
 
   const [profile, setProfile] = useState(readProfile)
   const [editing, setEditing] = useState(false)
@@ -256,33 +239,34 @@ function Profile() {
         className="explore-tile"
         style={{ background: video.gradient || '#222' }}
         onClick={() => setSelectedId(video.id)}
-        aria-label={`Fungua video ya ${video.username}`}
+        aria-label={`Fungua video ya ${displayName(video.username)}`}
       >
-        {video.videoUrl ? (
+        {video.cover ? (
+          <img
+            className="explore-thumb"
+            src={video.cover}
+            alt=""
+            draggable={false}
+          />
+        ) : video.videoUrl ? (
           <video
             className="explore-thumb"
-            src={`${video.videoUrl}#t=0.1`}
+            src={`${video.videoUrl}#t=${video.trimStart || 0.1}`}
             muted
             playsInline
             preload="metadata"
+            style={video.filter ? { filter: getFilterCss(video.filter) } : undefined}
           />
         ) : (
           <span className="explore-glyph">
-            <CategoryGlyph category={video.category} />
+            <TileGlyph category={video.category} />
           </span>
         )}
 
         <span className="explore-tile-shade" />
 
-        {video.status === 'pending' && (
-          <span className="tile-status pending">Inasubiri</span>
-        )}
-        {video.status === 'rejected' && (
-          <span className="tile-status rejected">Imekataliwa</span>
-        )}
-
         <span className="explore-tile-info">
-          <span className="explore-tile-user">{video.username}</span>
+          <span className="explore-tile-user">{displayName(video.username)}</span>
           <span className="explore-tile-likes">
             <HeartIcon />
             {formatCount(video.likes + (likedIds.includes(video.id) ? 1 : 0))}
@@ -380,7 +364,7 @@ function Profile() {
         {/* ===== Jina na bio ===== */}
         <div className="pf-info">
           <h2 className="pf-name">{profile.name}</h2>
-          <span className="pf-handle">{ME}</span>
+          <span className="pf-handle">{handle}</span>
 
           {profile.bio ? (
             <p className="pf-bio">{profile.bio}</p>
@@ -473,10 +457,7 @@ function Profile() {
             myVideos.length === 0 ? (
               <div className="profile-empty">
                 <p>Hujapakia video bado.</p>
-                <span>Gusa kitufe cha + kwenye navbar kupakia kipaji chako.</span>
-                <button className="profile-btn primary" onClick={() => navigate('/upload')}>
-                  Pakia video
-                </button>
+                <span>Gusa kitufe cha + kwenye navbar kupakia video yako ya kwanza.</span>
               </div>
             ) : (
               <div className="explore-grid">
@@ -508,22 +489,17 @@ function Profile() {
               <div className="follow-list">
                 {followingInfo.map(item => (
                   <div className="follow-row" key={item.name}>
-                    <span
-                      className="follow-avatar"
-                      style={{ background: avatarGradient(item.name) }}
-                    >
-                      {avatarLetter(item.name)}
-                    </span>
+                    <Avatar username={item.name} size={46} />
 
                     <span className="follow-main">
-                      <span className="follow-name">{item.name}</span>
+                      <span className="follow-name">{displayName(item.name)}</span>
                       <span className="follow-meta">{item.count} video</span>
                     </span>
 
                     <button
                       className="follow-msg"
                       onClick={() => navigate(`/messages/${encodeURIComponent(item.name)}`)}
-                      aria-label={`Mtumie ujumbe ${item.name}`}
+                      aria-label={`Mtumie ujumbe ${displayName(item.name)}`}
                     >
                       <ChatIcon />
                     </button>

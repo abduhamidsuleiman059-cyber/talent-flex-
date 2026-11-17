@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useVideos } from '../context/VideoContext'
-import { downloadVideoWithLogo } from '../utils/downloadWithLogo'
+import {
+  downloadVideoWithLogo,
+  MAX_DOWNLOAD_SECONDS
+} from '../utils/downloadWithLogo'
+import { getFilterCss } from '../utils/videoFilters'
 import '../styles/share.css'
 import '../styles/share-download.css'
 import '../styles/share-delete.css'
@@ -102,6 +106,8 @@ function errorText(err) {
       return 'Kivinjari kimezuia kuanza kuandaa video. Gusa Download tena.'
     case 'LOAD_FAILED':
       return 'Imeshindwa kusoma video hii. Jaribu tena.'
+    case 'TOO_LONG':
+      return `Video ni ndefu mno kwa Download yenye logo (kikomo ni dakika ${MAX_DOWNLOAD_SECONDS / 60}).`
     default:
       return 'Imeshindwa kuandaa video. Jaribu tena.'
   }
@@ -130,7 +136,7 @@ function ShareSheet({ video, onClose }) {
 
   // BASE_URL ni "/talent-flex-/" mtandaoni na "/" kwenye kompyuta yako
   const link = `${window.location.origin}${import.meta.env.BASE_URL}?v=${video.id}`
-  const message = `${video.username}: ${video.caption} - TalentFlex`
+  const message = `${video.username}: ${video.caption || ''} - TalentFlex`
   const encodedLink = encodeURIComponent(link)
   const encodedMessage = encodeURIComponent(message)
   const encodedBoth = encodeURIComponent(`${message}\n${link}`)
@@ -207,10 +213,13 @@ function ShareSheet({ video, onClose }) {
     setDl({ status: 'working', progress: 0, message: '' })
 
     try {
-      const { blob, ext } = await downloadVideoWithLogo({
+      const { blob, ext, filterApplied } = await downloadVideoWithLogo({
         videoUrl: video.videoUrl,
         username: video.username,
         logoUrl: `${import.meta.env.BASE_URL}logo.png`,
+        trimStart: video.trimStart || 0,
+        trimEnd: video.trimEnd || 0,
+        filter: video.filter ? getFilterCss(video.filter) : 'none',
         onProgress: (p) =>
           setDl(prev => (prev.status === 'working' ? { ...prev, progress: p } : prev)),
         signal: controller.signal
@@ -219,11 +228,12 @@ function ShareSheet({ video, onClose }) {
       const who = video.username.replace('@', '')
       saveBlob(blob, `TalentFlex_${who}_${video.id}.${ext}`)
 
-      setDl({
-        status: 'done',
-        progress: 1,
-        message: `Video imehifadhiwa (.${ext}). Itafute kwenye Downloads au Vipakuliwa.`
-      })
+      let note = `Video imehifadhiwa (.${ext}). Itafute kwenye Downloads au Vipakuliwa.`
+      if (!filterApplied) {
+        note += ' Filta haikutumika kwa sababu kivinjari chako hakiiruhusu.'
+      }
+
+      setDl({ status: 'done', progress: 1, message: note })
     } catch (err) {
       if (err && err.name === 'AbortError') {
         setDl(IDLE)

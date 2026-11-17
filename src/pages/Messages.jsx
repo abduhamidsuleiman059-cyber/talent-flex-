@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { useChat } from '../context/ChatContext'
 import { useVideos } from '../context/VideoContext'
-import { avatarGradient, avatarLetter } from '../utils/avatar'
+import Avatar from '../components/Avatar'
+import { displayName } from '../utils/displayName'
 import '../styles/messages.css'
 
 function timeAgo(ts) {
@@ -59,16 +60,11 @@ function Messages() {
             className="message-row"
             onClick={() => openChat(item.name)}
           >
-            <span
-              className="message-avatar"
-              style={{ background: avatarGradient(item.name) }}
-            >
-              {avatarLetter(item.name)}
-            </span>
+            <Avatar username={item.name} size={50} />
 
             <span className="message-main">
               <span className="message-top">
-                <span className="message-name">{item.name}</span>
+                <span className="message-name">{displayName(item.name)}</span>
                 {item.last && (
                   <span className="message-time">{timeAgo(item.last.createdAt)}</span>
                 )}

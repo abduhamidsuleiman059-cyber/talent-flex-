@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useChat } from '../context/ChatContext'
-import { avatarGradient, avatarLetter } from '../utils/avatar'
+import Avatar from '../components/Avatar'
+import { displayName } from '../utils/displayName'
 import '../styles/chat.css'
 
 function formatClock(ts) {
@@ -12,6 +13,7 @@ function Chat() {
   const navigate = useNavigate()
   const { user } = useParams()
   const name = decodeURIComponent(user || '')
+  const title = displayName(name)
   const { chats, sendMessage, markRead } = useChat()
 
   const [text, setText] = useState('')
@@ -56,20 +58,15 @@ function Chat() {
           </svg>
         </button>
 
-        <span
-          className="chat-avatar"
-          style={{ background: avatarGradient(name) }}
-        >
-          {avatarLetter(name)}
-        </span>
+        <Avatar username={name} size={38} />
 
-        <span className="chat-name">{name}</span>
+        <span className="chat-name">{title}</span>
       </div>
 
       <div className="chat-list">
         {messages.length === 0 && (
           <p className="chat-empty">
-            Hakuna ujumbe bado. Mwambie {name} hujambo! 👋
+            Hakuna ujumbe bado. Mwambie {title} hujambo! 👋
           </p>
         )}
 
