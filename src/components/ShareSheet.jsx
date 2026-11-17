@@ -6,6 +6,7 @@ import {
   MAX_DOWNLOAD_SECONDS
 } from '../utils/downloadWithLogo'
 import { getFilterCss } from '../utils/videoFilters'
+import { displayName } from '../utils/displayName'
 import '../styles/share.css'
 import '../styles/share-download.css'
 import '../styles/share-delete.css'
@@ -133,10 +134,11 @@ function ShareSheet({ video, onClose }) {
 
   const busy = dl.status === 'working'
   const isMine = video.username === ME
+  const ownerName = displayName(video.username)
 
   // BASE_URL ni "/talent-flex-/" mtandaoni na "/" kwenye kompyuta yako
   const link = `${window.location.origin}${import.meta.env.BASE_URL}?v=${video.id}`
-  const message = `${video.username}: ${video.caption || ''} - TalentFlex`
+  const message = `${ownerName}: ${video.caption || ''} - TalentFlex`
   const encodedLink = encodeURIComponent(link)
   const encodedMessage = encodeURIComponent(message)
   const encodedBoth = encodeURIComponent(`${message}\n${link}`)
@@ -215,7 +217,8 @@ function ShareSheet({ video, onClose }) {
     try {
       const { blob, ext, filterApplied } = await downloadVideoWithLogo({
         videoUrl: video.videoUrl,
-        username: video.username,
+        // Jina kamili kwenye skrini ya logo mwishoni
+        username: ownerName,
         logoUrl: `${import.meta.env.BASE_URL}logo.png`,
         trimStart: video.trimStart || 0,
         trimEnd: video.trimEnd || 0,
@@ -225,7 +228,7 @@ function ShareSheet({ video, onClose }) {
         signal: controller.signal
       })
 
-      const who = video.username.replace('@', '')
+      const who = ownerName.replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '') || 'video'
       saveBlob(blob, `TalentFlex_${who}_${video.id}.${ext}`)
 
       let note = `Video imehifadhiwa (.${ext}). Itafute kwenye Downloads au Vipakuliwa.`
