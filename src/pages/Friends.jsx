@@ -4,6 +4,7 @@ import Avatar from '../components/Avatar'
 import { displayName } from '../utils/displayName'
 import '../styles/profile.css'
 import '../styles/friends.css'
+import '../styles/userpage.css'
 
 const ME = '@wewe'
 
@@ -31,6 +32,10 @@ function Friends() {
     navigate(`/messages/${encodeURIComponent(name)}`)
   }
 
+  const openUser = (name) => {
+    navigate(`/user/${encodeURIComponent(name)}`)
+  }
+
   return (
     <div className="friends-wrapper">
       <h2 className="friends-title">Marafiki</h2>
@@ -45,12 +50,14 @@ function Friends() {
         <div className="follow-list">
           {followedUsers.map(name => (
             <div className="follow-row" key={name}>
-              <Avatar username={name} size={46} />
+              <button className="follow-link" onClick={() => openUser(name)}>
+                <Avatar username={name} size={46} />
 
-              <span className="follow-main">
-                <span className="follow-name">{displayName(name)}</span>
-                <span className="follow-meta">{countFor(name)} video</span>
-              </span>
+                <span className="follow-main">
+                  <span className="follow-name">{displayName(name)}</span>
+                  <span className="follow-meta">{countFor(name)} video</span>
+                </span>
+              </button>
 
               <button
                 className="follow-msg"
@@ -81,12 +88,14 @@ function Friends() {
         <div className="follow-list">
           {suggestions.map(name => (
             <div className="follow-row" key={name}>
-              <Avatar username={name} size={46} />
+              <button className="follow-link" onClick={() => openUser(name)}>
+                <Avatar username={name} size={46} />
 
-              <span className="follow-main">
-                <span className="follow-name">{displayName(name)}</span>
-                <span className="follow-meta">{countFor(name)} video</span>
-              </span>
+                <span className="follow-main">
+                  <span className="follow-name">{displayName(name)}</span>
+                  <span className="follow-meta">{countFor(name)} video</span>
+                </span>
+              </button>
 
               <button className="follow-add" onClick={() => toggleFollow(name)}>
                 Fuata

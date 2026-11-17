@@ -1,0 +1,112 @@
+.snake-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  transform: translateZ(0);
+}
+
+.snake-frame svg {
+  display: block;
+}
+
+.snake-frame rect {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.snake-base {
+  stroke: rgba(30, 184, 255, 0.22);
+  stroke-width: 1.5;
+}
+
+.snake-g {
+  stroke: rgba(30, 184, 255, 0.14);
+  stroke-width: 8;
+  stroke-dasharray: 26 74;
+  animation: snake-g 7s linear infinite;
+}
+
+.snake-t1 {
+  stroke: rgba(30, 184, 255, 0.3);
+  stroke-width: 3.5;
+  stroke-dasharray: 24 76;
+  animation: snake-t1 7s linear infinite;
+}
+
+.snake-t2 {
+  stroke: rgba(70, 205, 255, 0.58);
+  stroke-width: 3.5;
+  stroke-dasharray: 14 86;
+  animation: snake-t2 7s linear infinite;
+}
+
+.snake-t3 {
+  stroke: rgba(150, 228, 255, 0.88);
+  stroke-width: 3.5;
+  stroke-dasharray: 7 93;
+  animation: snake-t3 7s linear infinite;
+}
+
+.snake-h {
+  stroke: #ffffff;
+  stroke-width: 4.5;
+  stroke-dasharray: 2.2 97.8;
+  animation: snake-h 7s linear infinite;
+}
+
+@keyframes snake-g {
+  from {
+    stroke-dashoffset: 26;
+  }
+  to {
+    stroke-dashoffset: -74;
+  }
+}
+
+@keyframes snake-t1 {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: -76;
+  }
+}
+
+@keyframes snake-t2 {
+  from {
+    stroke-dashoffset: 14;
+  }
+  to {
+    stroke-dashoffset: -86;
+  }
+}
+
+@keyframes snake-t3 {
+  from {
+    stroke-dashoffset: 7;
+  }
+  to {
+    stroke-dashoffset: -93;
+  }
+}
+
+@keyframes snake-h {
+  from {
+    stroke-dashoffset: 2.2;
+  }
+  to {
+    stroke-dashoffset: -97.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snake-g,
+  .snake-t1,
+  .snake-t2,
+  .snake-t3,
+  .snake-h {
+    animation: none;
+    opacity: 0;
+  }
+}

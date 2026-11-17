@@ -1,0 +1,81 @@
+/* ===== Vichupo vya juu (Community, Following, For You) ===== */
+
+#root .feed-topbar {
+  background: linear-gradient(to bottom, rgba(0, 8, 20, 0.62), transparent);
+}
+
+#root .feed-topbar .feed-tab {
+  color: rgba(64, 196, 255, 0.8);
+  font-weight: 800;
+  text-shadow: 0 0 8px rgba(30, 184, 255, 0.55), 0 1px 5px rgba(0, 0, 0, 0.85);
+}
+
+#root .feed-topbar .feed-tab.active {
+  color: #4fd0ff;
+  text-shadow: 0 0 10px rgba(30, 184, 255, 0.95), 0 0 24px rgba(30, 184, 255, 0.65),
+    0 1px 5px rgba(0, 0, 0, 0.8);
+}
+
+#root .feed-topbar .feed-tab.active::after {
+  width: 24px;
+  background: #3ec8ff;
+  box-shadow: 0 0 10px #1eb8ff, 0 0 20px rgba(30, 184, 255, 0.7);
+}
+
+#root .feed-topbar .feed-search {
+  color: #4fd0ff;
+  filter: drop-shadow(0 0 6px rgba(30, 184, 255, 0.9));
+}
+
+/* ===== Navbar ya chini ===== */
+
+#root .app-container .navbar {
+  background: #01050c;
+  box-shadow: 0 -1px 0 rgba(30, 184, 255, 0.45), 0 -6px 22px rgba(30, 184, 255, 0.22);
+}
+
+#root .app-container .navbar .nav-item {
+  color: #2aa9f0;
+}
+
+#root .app-container .navbar .nav-item.active {
+  color: #62d8ff;
+}
+
+#root .app-container .navbar .nav-item svg {
+  filter: drop-shadow(0 0 5px rgba(30, 184, 255, 0.7));
+}
+
+#root .app-container .navbar .nav-item.active svg {
+  filter: drop-shadow(0 0 8px #1eb8ff) drop-shadow(0 0 14px rgba(30, 184, 255, 0.7));
+}
+
+#root .app-container .navbar .nav-item .nav-label {
+  text-shadow: 0 0 8px rgba(30, 184, 255, 0.5);
+}
+
+#root .app-container .navbar .nav-upload {
+  background: linear-gradient(135deg, #00e5ff, #1e6bff);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), 0 0 16px rgba(30, 184, 255, 0.75),
+    0 0 30px rgba(30, 184, 255, 0.4);
+}
+
+#root .app-container .navbar .nav-upload svg {
+  stroke: #fff;
+  filter: none;
+}
+
+/* ===== Upau wa maendeleo wa video ===== */
+
+#root .vp-track {
+  background: rgba(120, 200, 255, 0.28);
+}
+
+#root .vp-fill {
+  background: linear-gradient(90deg, #1eb8ff, #8fe3ff);
+}
+
+#root .vp-thumb {
+  background: #8fe3ff;
+  box-shadow: 0 0 10px #1eb8ff;
+}

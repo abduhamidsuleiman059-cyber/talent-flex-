@@ -1,0 +1,78 @@
+/* Kiungo cha kufungua ukurasa wa mtu (Friends) */
+.follow-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.follow-link:active {
+  opacity: 0.7;
+}
+
+/* Ukurasa wa mtu mwingine */
+.up-back {
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 12px;
+}
+
+.pf-avatar-ring {
+  border: 3px solid #0d0d0d;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+
+.up-actions {
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px 6px;
+}
+
+.up-btn {
+  flex: 1;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.up-btn:active {
+  transform: scale(0.97);
+}
+
+.up-btn.primary {
+  border: none;
+  background: linear-gradient(90deg, #ffb800, #ff5c00);
+  color: #0d0d0d;
+}
+
+.up-btn.ghost {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.up-heading {
+  margin: 16px 4px 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.up-empty {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+}

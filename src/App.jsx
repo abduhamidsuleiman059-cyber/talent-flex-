@@ -8,12 +8,15 @@ import Friends from './pages/Friends'
 import Messages from './pages/Messages'
 import Chat from './pages/Chat'
 import Profile from './pages/Profile'
+import UserPage from './pages/UserPage'
 import Settings from './pages/Settings'
 import Upload from './pages/Upload'
 import Admin from './pages/Admin'
 import Auth from './pages/Auth'
 import Navbar from './components/Navbar'
 import Splash from './components/Splash'
+import SnakeFrame from './components/SnakeFrame'
+import AppStatus from './components/AppStatus'
 import { getCurrent, isOwner } from './utils/auth'
 
 const SPLASH_MS = 2500
@@ -42,6 +45,8 @@ function App() {
         {phase !== 'show' && (
           <div className="app-container">
             <Auth mode="first" />
+            <SnakeFrame />
+            <AppStatus />
           </div>
         )}
         {phase !== 'done' && <Splash fading={phase === 'fade'} />}
@@ -63,6 +68,7 @@ function App() {
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/messages/:user" element={<Chat />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/user/:name" element={<UserPage />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/add-account" element={<Auth mode="add" />} />
                 <Route path="/upload" element={<Upload />} />
@@ -72,6 +78,8 @@ function App() {
                 />
               </Routes>
               <Navbar />
+              <SnakeFrame />
+              <AppStatus />
             </div>
           </HashRouter>
         )}

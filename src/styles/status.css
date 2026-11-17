@@ -1,0 +1,51 @@
+.net-pill {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 56px);
+  left: 50%;
+  z-index: 70;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 184, 0, 0.5);
+  border-radius: 16px;
+  background: rgba(20, 14, 0, 0.85);
+  color: #ffc94d;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.update-toast {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 10px 16px;
+  border: 1px solid rgba(30, 184, 255, 0.5);
+  border-radius: 14px;
+  background: rgba(2, 10, 24, 0.94);
+  box-shadow: 0 0 18px rgba(30, 184, 255, 0.35);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.update-toast button {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #00e5ff, #1e6bff);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}

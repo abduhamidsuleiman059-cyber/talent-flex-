@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
 import CommentsSheet from './CommentsSheet'
 import ShareSheet from './ShareSheet'
@@ -14,8 +15,11 @@ import '../styles/avatar.css'
 import '../styles/videocard-playpause.css'
 import '../styles/videocard-name.css'
 import '../styles/videocard-progress.css'
+import '../styles/videocard-extras.css'
 
 const ME = '@wewe'
+// Gusa mara mbili ndani ya muda huu (milisekunde) = penda video
+const DOUBLE_TAP_MS = 300
 
 function formatCount(n) {
   if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M'
@@ -34,7 +38,23 @@ function fmtTime(sec) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+// Maelezo yenye hashtag za bluu
+function CaptionText({ text }) {
+  const parts = text.split(/(#[\p{L}\p{N}_]+)/u)
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <span key={i} className="cap-tag">
+        {part}
+      </span>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  )
+}
+
 function VideoCard({ video }) {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { likedIds, toggleLike, comments, followedUsers, toggleFollow } = useVideos()
   const [showComments, setShowComments] = useState(false)
   const [showShare, setShowShare] = useState(false)
@@ -44,16 +64,24 @@ function VideoCard({ video }) {
   // Upau wa maendeleo
   const [progress, setProgress] = useState(0)
   const [scrub, setScrub] = useState(null)
+  // Jalada, maelezo na mioyo ya kugusa mara mbili
+  const [started, setStarted] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [hearts, setHearts] = useState([])
+
   const cardRef = useRef(null)
   const videoRef = useRef(null)
   const barRef = useRef(null)
   const checkTimer = useRef(null)
   const indicatorTimer = useRef(null)
+  const tapTimer = useRef(null)
+  const lastTapRef = useRef(0)
   const scrubbingRef = useRef(false)
   const wasPlayingRef = useRef(false)
   const sound = useSyncExternalStore(subscribeSound, getSound)
 
   const name = displayName(video.username)
+  const caption = (video.caption || '').trim()
 
   const liked = likedIds.includes(video.id)
   const likeCount = video.likes + (liked ? 1 : 0)
@@ -73,8 +101,22 @@ function VideoCard({ video }) {
     return () => {
       clearTimeout(checkTimer.current)
       clearTimeout(indicatorTimer.current)
+      clearTimeout(tapTimer.current)
     }
   }, [])
+
+  // Fungua ukurasa wa mtumiaji (au Profile yako mwenyewe)
+  const goUser = () => {
+    const target = isMine ? '/profile' : `/user/${encodeURIComponent(video.username)}`
+    let current = location.pathname
+    try {
+      current = decodeURIComponent(current)
+    } catch {
+      // tumia ilivyo
+    }
+    if (current === decodeURIComponent(target)) return
+    navigate(target)
+  }
 
   const handleFollow = () => {
     if (following) return
@@ -154,7 +196,7 @@ function VideoCard({ video }) {
     }
   }
 
-  // Gusa video: simamisha / endelea
+  // Simamisha / endelea
   const togglePlay = () => {
     const el = videoRef.current
     if (!el) return
@@ -168,6 +210,46 @@ function VideoCard({ video }) {
       el.pause()
       setIndicator('play')
     }
+  }
+
+  // Moyo mkubwa mahali ulipogusa, na penda video
+  const likeFromTap = (e) => {
+    const card = cardRef.current
+    if (!card) return
+
+    const rect = card.getBoundingClientRect()
+    const heart = {
+      id: Date.now() + Math.random(),
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      rot: Math.round(Math.random() * 30 - 15)
+    }
+
+    setHearts(prev => [...prev, heart])
+    setTimeout(() => {
+      setHearts(prev => prev.filter(h => h.id !== heart.id))
+    }, 900)
+
+    if (!liked) toggleLike(video.id)
+  }
+
+  // Gusa mara moja = simamisha/endelea, mara mbili = penda
+  const handleVideoTap = (e) => {
+    const now = Date.now()
+
+    if (now - lastTapRef.current < DOUBLE_TAP_MS) {
+      lastTapRef.current = 0
+      clearTimeout(tapTimer.current)
+      likeFromTap(e)
+      return
+    }
+
+    lastTapRef.current = now
+    clearTimeout(tapTimer.current)
+    tapTimer.current = setTimeout(() => {
+      lastTapRef.current = 0
+      togglePlay()
+    }, DOUBLE_TAP_MS)
   }
 
   // Kitufe cha spika: washa / zima sauti
@@ -252,7 +334,17 @@ function VideoCard({ video }) {
           style={video.filter ? { filter: getFilterCss(video.filter) } : undefined}
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
-          onClick={togglePlay}
+          onPlaying={() => setStarted(true)}
+          onClick={handleVideoTap}
+        />
+      )}
+
+      {video.videoUrl && video.cover && (
+        <img
+          className={started ? 'video-cover hidden' : 'video-cover'}
+          src={video.cover}
+          alt=""
+          draggable={false}
         />
       )}
 
@@ -271,6 +363,18 @@ function VideoCard({ video }) {
         </div>
       )}
 
+      {hearts.map(h => (
+        <div
+          key={h.id}
+          className="tap-heart"
+          style={{ left: h.x, top: h.y, '--rot': `${h.rot}deg` }}
+        >
+          <svg viewBox="0 0 24 24" width="96" height="96" fill="currentColor">
+            <path d="M12 21s-6.7-4.3-9.5-8.2C.6 9.9 1.4 6.4 4.3 4.9c2.4-1.3 5-.6 6.7 1.4 1.7-2 4.3-2.7 6.7-1.4 2.9 1.5 3.7 5 1.8 7.9C18.7 16.7 12 21 12 21z" />
+          </svg>
+        </div>
+      ))}
+
       {scrub && (
         <div className="vp-time">
           {fmtTime(scrub.time)} <span>/ {fmtTime(scrub.total)}</span>
@@ -279,7 +383,35 @@ function VideoCard({ video }) {
 
       <div className="video-overlay">
         <div className="video-info">
-          <h3 className="video-name">{name}</h3>
+          <button className="video-name-btn" onClick={goUser}>
+            <span className="video-name">{name}</span>
+          </button>
+
+          {caption && (
+            <div className={expanded ? 'video-caption open' : 'video-caption'}>
+              {expanded && (
+                <p className="video-caption-text">
+                  <CaptionText text={caption} />
+                </p>
+              )}
+              <button className="video-more" onClick={() => setExpanded(v => !v)}>
+                {expanded ? 'punguza' : 'zaidi'}
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ transform: expanded ? 'rotate(180deg)' : 'none' }}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -307,7 +439,13 @@ function VideoCard({ video }) {
 
       <div className="video-actions">
         <div className="avatar-wrap">
-          <Avatar username={video.username} size={48} />
+          <button
+            className="avatar-hit"
+            onClick={goUser}
+            aria-label={`Fungua ukurasa wa ${name}`}
+          >
+            <Avatar username={video.username} size={48} />
+          </button>
 
           {showBadge && (
             <button
