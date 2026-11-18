@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useChat } from '../context/ChatContext'
 import { useVideos } from '../context/VideoContext'
 import Avatar from '../components/Avatar'
+import StatusRow from '../components/StatusRow'
 import { displayName } from '../utils/displayName'
 import '../styles/messages.css'
 
@@ -42,6 +43,8 @@ function Messages() {
   return (
     <div className="messages-wrapper">
       <h2 className="messages-title">Ujumbe</h2>
+
+      <StatusRow />
 
       {items.length === 0 && (
         <div className="messages-empty">

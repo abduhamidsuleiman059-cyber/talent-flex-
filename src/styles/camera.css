@@ -1,0 +1,329 @@
+.cam-root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #fff;
+}
+
+.cam-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin-top: calc(env(safe-area-inset-top, 0px) + 6px);
+  overflow: hidden;
+  border-radius: 22px 22px 0 0;
+  background: #111;
+}
+
+.cam-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.cam-video.mirror {
+  transform: scaleX(-1);
+}
+
+.cam-video.hidden {
+  visibility: hidden;
+}
+
+.cam-top {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cam-icon-btn {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.42);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.cam-icon-btn:active {
+  transform: scale(0.92);
+}
+
+.cam-icon-btn:disabled {
+  opacity: 0.4;
+}
+
+.cam-spacer {
+  width: 42px;
+}
+
+.cam-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cam-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff3b30;
+  animation: cam-blink 1s ease-in-out infinite;
+}
+
+.cam-side {
+  position: absolute;
+  top: 70px;
+  right: 12px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cam-side-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.6));
+}
+
+.cam-side-btn:disabled {
+  opacity: 0.4;
+}
+
+.cam-bottom {
+  flex-shrink: 0;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: #000;
+}
+
+.cam-modes {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.cam-mode {
+  min-width: 56px;
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 16px;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cam-mode.active {
+  background: #fff;
+  color: #000;
+}
+
+.cam-mode:disabled {
+  opacity: 0.45;
+}
+
+.cam-controls {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.cam-gallery {
+  justify-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cam-gallery-box {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cam-gallery:disabled {
+  opacity: 0.4;
+}
+
+.cam-rec {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.cam-rec:disabled {
+  opacity: 0.4;
+}
+
+.cam-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cam-ring circle {
+  fill: none;
+  stroke-width: 5;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.cam-ring-bg {
+  stroke: rgba(255, 255, 255, 0.85);
+}
+
+.cam-ring-fg {
+  stroke: #1eb8ff;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px #1eb8ff);
+}
+
+.cam-rec-core {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #ff3b5c;
+  transition: width 0.2s ease, height 0.2s ease, border-radius 0.2s ease;
+}
+
+.cam-rec.recording .cam-rec-core {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+.cam-end {
+  justify-self: end;
+  width: 44px;
+}
+
+/* ===== Hali: inaanza, imekataliwa, haiwezekani ===== */
+
+.cam-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  background: #0b0b0b;
+  text-align: center;
+}
+
+.cam-overlay h2 {
+  margin: 4px 0 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.cam-overlay p {
+  max-width: 300px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.cam-overlay-btn {
+  width: 100%;
+  max-width: 280px;
+  height: 46px;
+  margin-top: 8px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #00e5ff, #1e6bff);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cam-overlay-btn.ghost {
+  margin-top: 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: none;
+}
+
+.cam-spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #1eb8ff;
+  border-radius: 50%;
+  animation: cam-spin 0.8s linear infinite;
+}
+
+@keyframes cam-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes cam-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

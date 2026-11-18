@@ -11,6 +11,7 @@ import Profile from './pages/Profile'
 import UserPage from './pages/UserPage'
 import Settings from './pages/Settings'
 import Upload from './pages/Upload'
+import StatusCreate from './pages/StatusCreate'
 import Admin from './pages/Admin'
 import Auth from './pages/Auth'
 import Navbar from './components/Navbar'
@@ -72,6 +73,7 @@ function App() {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/add-account" element={<Auth mode="add" />} />
                 <Route path="/upload" element={<Upload />} />
+                <Route path="/status/new" element={<StatusCreate />} />
                 <Route
                   path="/admin"
                   element={owner ? <Admin /> : <Navigate to="/" replace />}

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useChat } from '../context/ChatContext'
-import { setPendingFile } from '../utils/pendingFile'
 import { getCurrent, isOwner } from '../utils/auth'
 import '../styles/navbar.css'
 import '../styles/messages.css'
@@ -23,7 +22,6 @@ function Navbar() {
   const scrollTimeout = useRef(null)
   const pressTimer = useRef(null)
   const longPressed = useRef(false)
-  const fileRef = useRef(null)
 
   const owner = isOwner(getCurrent())
 
@@ -68,26 +66,14 @@ function Navbar() {
     navigate('/profile')
   }
 
-  // Kitufe cha +: fungua faili za simu moja kwa moja
-  const openPicker = () => {
-    if (fileRef.current) fileRef.current.click()
-  }
-
-  const handlePicked = (e) => {
-    const file = e.target.files && e.target.files[0]
-    e.target.value = ''
-    if (!file) return
-    setPendingFile(file)
-    navigate('/upload', { state: { t: Date.now() } })
-  }
-
   const path = location.pathname
 
-  // Navbar ijifiche ndani ya mazungumzo, kuhariri video na kuongeza akaunti
+  // Navbar ijifiche ndani ya mazungumzo, kamera/kuhariri, kuongeza akaunti na status mpya
   if (
     path.startsWith('/messages/') ||
     path === '/upload' ||
-    path === '/add-account'
+    path === '/add-account' ||
+    path === '/status/new'
   ) {
     return null
   }
@@ -123,20 +109,12 @@ function Navbar() {
         <span className="nav-label">{LABELS.friends}</span>
       </button>
 
-      <button className="nav-upload" onClick={openPicker} aria-label="Chagua video">
+      <button className="nav-upload" onClick={() => navigate('/upload')} aria-label="Rekodi au pakia video">
         <svg viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.8" strokeLinecap="round">
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </button>
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept="video/*"
-        hidden
-        onChange={handlePicked}
-      />
 
       <button
         className={onInbox ? 'nav-item has-badge active' : 'nav-item has-badge'}

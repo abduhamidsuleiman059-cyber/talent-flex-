@@ -1,0 +1,371 @@
+.av-wrapper {
+  position: relative;
+  height: 100%;
+  overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 26px) 20px
+    calc(26px + env(safe-area-inset-bottom, 0px));
+  background:
+    radial-gradient(120% 55% at 50% -8%, rgba(30, 184, 255, 0.3), transparent 62%),
+    radial-gradient(80% 45% at 100% 100%, rgba(124, 58, 237, 0.2), transparent 60%),
+    #070b14;
+  color: #fff;
+}
+
+.av-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.av-logo {
+  width: 120px;
+  height: auto;
+  filter: drop-shadow(0 6px 26px rgba(30, 184, 255, 0.5));
+  animation: av-float 4.5s ease-in-out infinite;
+}
+
+.av-brand {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #22d3ee, #7c3aed, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.av-tagline {
+  margin: 10px 0 22px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.av-card {
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* ===== Vichupo ===== */
+
+.av-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 16px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.av-tab-slider {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 11px;
+  background: linear-gradient(135deg, #00e5ff, #1e6bff);
+  box-shadow: 0 0 16px rgba(30, 184, 255, 0.5);
+  transition: transform 0.25s ease;
+}
+
+.av-tabs[data-tab='signup'] .av-tab-slider {
+  transform: translateX(100%);
+}
+
+.av-tab {
+  position: relative;
+  z-index: 1;
+  height: 40px;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.av-tab.active {
+  color: #fff;
+}
+
+/* ===== Google ===== */
+
+.av-google {
+  width: 100%;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: none;
+  border-radius: 14px;
+  background: #fff;
+  color: #1f1f1f;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.av-google:active {
+  transform: scale(0.98);
+}
+
+.av-notice {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(30, 184, 255, 0.4);
+  border-radius: 12px;
+  background: rgba(30, 184, 255, 0.1);
+  color: #9fe0ff;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.av-notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.av-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12.5px;
+}
+
+.av-divider::before,
+.av-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ===== Fomu ===== */
+
+.av-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.av-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.av-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.av-input-wrap {
+  position: relative;
+}
+
+.av-input-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+.av-input {
+  width: 100%;
+  height: 50px;
+  padding: 0 14px 0 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.av-input::placeholder {
+  color: rgba(255, 255, 255, 0.32);
+}
+
+.av-input:focus {
+  border-color: #1eb8ff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.av-input.has-eye {
+  padding-right: 48px;
+}
+
+.av-wrap-focus:focus-within .av-input-icon {
+  color: #4fd0ff;
+}
+
+.av-eye {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+
+.av-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.av-hint.ok {
+  color: #4ade80;
+}
+
+.av-hint.err {
+  color: #ff8a8a;
+}
+
+/* ===== Nguvu ya nenosiri ===== */
+
+.av-meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.av-meter-bars {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.av-meter-bars span {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  transition: background 0.2s ease;
+}
+
+.av-meter[data-score='1'] .av-meter-bars span:nth-child(-n + 1) {
+  background: #ff5a5a;
+}
+
+.av-meter[data-score='2'] .av-meter-bars span:nth-child(-n + 2) {
+  background: #ffb800;
+}
+
+.av-meter[data-score='3'] .av-meter-bars span:nth-child(-n + 3) {
+  background: #7ee081;
+}
+
+.av-meter[data-score='4'] .av-meter-bars span:nth-child(-n + 4) {
+  background: #22d3a6;
+}
+
+.av-meter-label {
+  min-width: 56px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+}
+
+/* ===== Vitufe ===== */
+
+.av-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 90, 90, 0.12);
+  color: #ff9a9a;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.av-submit {
+  height: 52px;
+  margin-top: 2px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #00e5ff, #1e6bff);
+  box-shadow: 0 0 22px rgba(30, 184, 255, 0.45);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.av-submit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.av-submit:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: default;
+}
+
+.av-cancel {
+  padding: 10px;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.av-terms {
+  margin: 16px 8px 0;
+  text-align: center;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes av-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .av-logo {
+    animation: none;
+  }
+}

@@ -1,17 +1,41 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
-import { getPendingFile, setPendingFile } from '../utils/pendingFile'
+import CameraCapture from '../components/CameraCapture'
+import { WhatsAppIcon, TelegramIcon, FacebookIcon, XIcon } from '../components/SocialIcons'
 import { FILTERS, getFilterCss } from '../utils/videoFilters'
 import { frameDataUrl, captureFrame, cropToDataUrl } from '../utils/imageTools'
 import '../styles/upload-editor.css'
 import '../styles/upload-cover.css'
+import '../styles/upload-tiktok.css'
 
 // Muda wa juu wa video (sekunde): dakika 30
 const MAX_SECONDS = 30 * 60
 // Video iliyopunguzwa isiwe fupi kuliko sekunde 1
 const MIN_CLIP = 1
-const TAGS = ['#TalentFlex', '#Kipaji', '#Tanzania']
+const TAGS = ['#TalentFlex', '#Kipaji', '#Tanzania', '#BongoTalent', '#Muziki', '#Mpira']
+
+const SHARE_APPS = [
+  { id: 'whatsapp', label: 'WhatsApp', Icon: WhatsAppIcon },
+  { id: 'telegram', label: 'Telegram', Icon: TelegramIcon },
+  { id: 'facebook', label: 'Facebook', Icon: FacebookIcon },
+  { id: 'x', label: 'X', Icon: XIcon }
+]
+
+function shareUrl(appId, text, link) {
+  const t = encodeURIComponent(text)
+  const l = encodeURIComponent(link)
+  switch (appId) {
+    case 'whatsapp':
+      return `https://wa.me/?text=${encodeURIComponent(`${text}\n${link}`)}`
+    case 'telegram':
+      return `https://t.me/share/url?url=${l}&text=${t}`
+    case 'facebook':
+      return `https://www.facebook.com/sharer/sharer.php?u=${l}`
+    default:
+      return `https://twitter.com/intent/tweet?text=${t}&url=${l}`
+  }
+}
 
 function fmt(sec) {
   const total = Math.max(0, Math.round(sec))
@@ -82,14 +106,42 @@ function SoundIcon({ on }) {
   )
 }
 
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
+      <polyline points="16 6 12 2 8 6" />
+      <line x1="12" y1="2" x2="12" y2="15" />
+    </svg>
+  )
+}
+
+function ChevronIcon({ open }) {
+  return (
+    <svg
+      className={open ? 'ud-chevron open' : 'ud-chevron'}
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  )
+}
+
 function Upload() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { publishVideo } = useVideos()
 
   const [file, setFile] = useState(null)
   const [url, setUrl] = useState(null)
   const [duration, setDuration] = useState(0)
+  const [durationFixed, setDurationFixed] = useState(false)
   const [loadError, setLoadError] = useState('')
 
   // edit | details | cover | done
@@ -100,7 +152,10 @@ function Upload() {
   const [trimEnd, setTrimEnd] = useState(0)
   const [filterId, setFilterId] = useState('none')
   const [caption, setCaption] = useState('')
-  const [allowComments, setAllowComments] = useState(true)
+  const [showTags, setShowTags] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [shareApps, setShareApps] = useState([])
+  const [preview, setPreview] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(false)
   const [publishing, setPublishing] = useState(false)
@@ -112,6 +167,7 @@ function Upload() {
 
   const pickerRef = useRef(null)
   const coverImgRef = useRef(null)
+  const captionRef = useRef(null)
   const videoRef = useRef(null)
   const coverVideoRef = useRef(null)
   const publishedUrlRef = useRef(null)
@@ -120,13 +176,6 @@ function Upload() {
   const minGap = Math.min(MIN_CLIP, duration)
   const sliderStep = duration > 120 ? 1 : 0.1
   const filterCss = getFilterCss(filterId)
-  const filterLabel = (FILTERS.find(f => f.id === filterId) || FILTERS[0]).label
-
-  // Pokea video iliyochaguliwa kwenye navbar (kila unapobonyeza +)
-  useEffect(() => {
-    const pending = getPendingFile()
-    if (pending) setFile(pending)
-  }, [location.key])
 
   // Soma video mpya na weka hali ya kuanzia
   useEffect(() => {
@@ -143,27 +192,44 @@ function Upload() {
     setTab('trim')
     setFilterId('none')
     setCaption('')
-    setAllowComments(true)
+    setShowTags(false)
+    setShareOpen(false)
+    setShareApps([])
+    setPreview(false)
     setPlaying(false)
     setSavedOk(true)
     setCover('')
     setCoverTouched(false)
     setCoverError('')
+    setDurationFixed(false)
 
     probe.onloadedmetadata = () => {
       if (cancelled) return
-      const d = probe.duration
+
+      let d = probe.duration
+      let fixed = false
+
+      // Video zilizorekodiwa kwa webm mara nyingi hazina muda kwenye metadata
       if (!Number.isFinite(d) || d <= 0) {
-        setLoadError('Imeshindwa kusoma video hii. Jaribu faili nyingine.')
-        return
+        const known = Number(file.tfDuration)
+        if (Number.isFinite(known) && known > 0) {
+          d = known
+          fixed = true
+        } else {
+          setLoadError('Imeshindwa kusoma video hii. Jaribu faili nyingine.')
+          return
+        }
       }
+
       if (d > MAX_SECONDS) {
         setLoadError(
           `Video ni ndefu sana (${fmt(d)}). Muda wa juu ni dakika ${MAX_SECONDS / 60}.`
         )
         return
       }
+
       setDuration(d)
+      setDurationFixed(fixed)
       setTrimStart(0)
       setTrimEnd(d)
       setUrl(objectUrl)
@@ -208,21 +274,22 @@ function Upload() {
     }
   }, [step, url, coverTouched, trimStart, trimEnd, filterCss])
 
-  const discard = () => {
-    setPendingFile(null)
-    navigate('/')
+  // Rudi kwenye kamera
+  const startOver = () => {
+    setFile(null)
+    setUrl(null)
+    setLoadError('')
+    setStep('edit')
+  }
+
+  const openPicker = () => {
+    if (pickerRef.current) pickerRef.current.click()
   }
 
   const handleLocalPick = (e) => {
     const picked = e.target.files && e.target.files[0]
     e.target.value = ''
-    if (!picked) return
-    setPendingFile(null)
-    setFile(picked)
-  }
-
-  const openPicker = () => {
-    if (pickerRef.current) pickerRef.current.click()
+    if (picked) setFile(picked)
   }
 
   // ===== Kicheza cha kuhariri =====
@@ -319,21 +386,38 @@ function Upload() {
     }
   }
 
-  // ===== Kuchapisha =====
+  // ===== Maelezo =====
+
+  const insertChar = (ch) => {
+    setCaption(prev => {
+      const spaced = prev && !prev.endsWith(' ') && !prev.endsWith('\n') ? `${prev} ` : prev
+      return `${spaced}${ch}`.slice(0, 300)
+    })
+    if (ch === '#') setShowTags(true)
+    if (captionRef.current) captionRef.current.focus()
+  }
 
   const addTag = (tag) => {
     setCaption(prev => {
-      if (prev.includes(tag)) return prev
-      const next = prev.trim() ? `${prev.trim()} ${tag}` : tag
+      const base = prev.replace(/#$/, '').trimEnd()
+      if (base.includes(tag)) return base
+      const next = base ? `${base} ${tag}` : tag
       return next.slice(0, 300)
     })
   }
+
+  const toggleShareApp = (id) => {
+    setShareApps(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  // ===== Kuchapisha =====
 
   const handlePublish = async () => {
     if (publishing || !url) return
     setPublishing(true)
     publishedUrlRef.current = url
-    setPendingFile(null)
 
     const saved = await publishVideo({
       username: '@wewe',
@@ -343,9 +427,9 @@ function Upload() {
       comments: 0,
       duration,
       trimStart: trimStart > 0.05 ? trimStart : 0,
-      trimEnd: trimEnd < duration - 0.05 ? trimEnd : 0,
+      trimEnd: durationFixed || trimEnd < duration - 0.05 ? trimEnd : 0,
       filter: filterId,
-      allowComments,
+      allowComments: true,
       cover
     })
 
@@ -354,38 +438,33 @@ function Upload() {
     setStep('done')
   }
 
+  const shareNow = (appId) => {
+    const link = `${window.location.origin}${import.meta.env.BASE_URL}`
+    const base = caption.trim().slice(0, 80)
+    const text = base
+      ? `Tazama kipaji changu kwenye TalentFlex: ${base}`
+      : 'Tazama kipaji changu kwenye TalentFlex'
+    window.open(shareUrl(appId, text, link), '_blank', 'noopener,noreferrer')
+  }
+
   // ===== Skrini =====
 
   let content
 
   if (!file) {
     content = (
-      <>
-        <div className="ed-top">
-          <button className="ed-icon-btn" onClick={discard} aria-label="Rudi">
-            <CloseIcon />
-          </button>
-          <h2 className="ed-title">Video mpya</h2>
-          <span className="ed-top-space" />
-        </div>
-        <div className="ed-center">
-          <button className="ed-pick-btn" onClick={openPicker} aria-label="Chagua video">
-            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 7l-7 5 7 5V7z" />
-              <rect x="1" y="5" width="15" height="14" rx="2" />
-            </svg>
-          </button>
-          <h2>Chagua video</h2>
-          <p>Gusa kuchagua video kutoka kwenye simu yako.</p>
-        </div>
-      </>
+      <CameraCapture
+        onRecorded={setFile}
+        onPick={setFile}
+        onClose={() => navigate('/')}
+      />
     )
   } else if (loadError) {
     content = (
       <>
         <div className="ed-top">
-          <button className="ed-icon-btn" onClick={discard} aria-label="Funga">
-            <CloseIcon />
+          <button className="ed-icon-btn" onClick={startOver} aria-label="Rudi">
+            <BackIcon />
           </button>
           <h2 className="ed-title">Video mpya</h2>
           <span className="ed-top-space" />
@@ -396,6 +475,9 @@ function Upload() {
           <div className="ed-actions">
             <button className="ed-primary" onClick={openPicker}>
               Chagua nyingine
+            </button>
+            <button className="ed-ghost" onClick={startOver}>
+              Rudi kwenye kamera
             </button>
           </div>
         </div>
@@ -409,6 +491,8 @@ function Upload() {
       </div>
     )
   } else if (step === 'done') {
+    const chosen = SHARE_APPS.filter(a => shareApps.includes(a.id))
+
     content = (
       <div className="ed-center">
         <div className="ed-success-icon">
@@ -426,11 +510,25 @@ function Upload() {
           </p>
         )}
 
+        {chosen.length > 0 && (
+          <div className="ud-share-now">
+            <p className="ud-share-now-title">Shiriki sasa</p>
+            <div className="ud-share-now-list">
+              {chosen.map(({ id, label, Icon }) => (
+                <button key={id} className="ud-share-now-btn" onClick={() => shareNow(id)}>
+                  <Icon size={18} />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="ed-actions">
           <button className="ed-primary" onClick={() => navigate('/')}>
             Tazama Feed
           </button>
-          <button className="ed-ghost" onClick={openPicker}>
+          <button className="ed-ghost" onClick={startOver}>
             Pakia nyingine
           </button>
         </div>
@@ -484,7 +582,10 @@ function Upload() {
             />
           </div>
 
-          <button className="ed-ghost wide" onClick={() => coverImgRef.current && coverImgRef.current.click()}>
+          <button
+            className="ed-ghost wide"
+            onClick={() => coverImgRef.current && coverImgRef.current.click()}
+          >
             Chagua picha kutoka kwenye simu
           </button>
 
@@ -497,6 +598,8 @@ function Upload() {
       </>
     )
   } else if (step === 'details') {
+    const pickedApps = SHARE_APPS.filter(a => shareApps.includes(a.id))
+
     content = (
       <>
         <div className="ed-top">
@@ -508,8 +611,14 @@ function Upload() {
           >
             <BackIcon />
           </button>
-          <h2 className="ed-title">Maelezo</h2>
-          <span className="ed-top-space" />
+          <h2 className="ed-title">Chapisha</h2>
+          <button
+            className="ud-preview-btn"
+            onClick={() => setPreview(true)}
+            disabled={publishing}
+          >
+            Hakiki
+          </button>
         </div>
 
         <div className="ed-details">
@@ -528,47 +637,86 @@ function Upload() {
                   <span className="ed-spinner" />
                 </span>
               )}
-              <span className="ed-cover-label">Hariri jalada</span>
+              <span className="ed-cover-label">Jalada</span>
             </button>
 
             <textarea
+              ref={captionRef}
               className="ed-textarea"
-              placeholder="Andika kuhusu video yako... #hashtag"
+              placeholder="Andika maelezo marefu husaidia kupata watazamaji zaidi..."
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               maxLength={300}
             />
           </div>
-          <span className="ed-count">{caption.length}/300</span>
 
-          <div className="ed-tags">
-            {TAGS.map(tag => (
-              <button key={tag} type="button" className="ed-tag" onClick={() => addTag(tag)}>
-                {tag}
-              </button>
-            ))}
+          <div className="ud-tools">
+            <button
+              type="button"
+              className="ud-tool"
+              onClick={() => insertChar('#')}
+              aria-label="Hashtag"
+            >
+              #
+            </button>
+            <button
+              type="button"
+              className="ud-tool"
+              onClick={() => insertChar('@')}
+              aria-label="Taja mtu"
+            >
+              @
+            </button>
+            <span className="ud-count">{caption.length}/300</span>
           </div>
 
-          <div className="ed-card">
-            <div className="ed-row">
-              <span>Ruhusu maoni</span>
-              <button
-                type="button"
-                className={allowComments ? 'ed-switch on' : 'ed-switch'}
-                onClick={() => setAllowComments(v => !v)}
-                role="switch"
-                aria-checked={allowComments}
-                aria-label="Ruhusu maoni"
-              />
+          {showTags && (
+            <div className="ed-tags">
+              {TAGS.map(tag => (
+                <button key={tag} type="button" className="ed-tag" onClick={() => addTag(tag)}>
+                  {tag}
+                </button>
+              ))}
             </div>
-            <div className="ed-row">
-              <span>Muda wa video</span>
-              <span className="ed-row-value">{fmt(clipLength)}</span>
-            </div>
-            <div className="ed-row">
-              <span>Filta</span>
-              <span className="ed-row-value">{filterLabel}</span>
-            </div>
+          )}
+
+        <div className="ud-share">
+            <button
+              type="button"
+              className="ud-share-row"
+              onClick={() => setShareOpen(v => !v)}
+            >
+              <span className="ud-share-left">
+                <ShareIcon />
+                <span>Shiriki kwa</span>
+              </span>
+              <span className="ud-share-right">
+                {pickedApps.length > 0 && (
+                  <span className="ud-share-picked">
+                    {pickedApps.map(({ id, Icon }) => (
+                      <Icon key={id} size={17} />
+                    ))}
+                  </span>
+                )}
+                <ChevronIcon open={shareOpen} />
+              </span>
+            </button>
+
+            {shareOpen && (
+              <div className="ud-share-apps">
+                {SHARE_APPS.map(({ id, label, Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={shareApps.includes(id) ? 'ud-app-chip on' : 'ud-app-chip'}
+                    onClick={() => toggleShareApp(id)}
+                  >
+                    <Icon size={20} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -590,7 +738,7 @@ function Upload() {
     content = (
       <>
         <div className="ed-top">
-          <button className="ed-icon-btn" onClick={discard} aria-label="Funga">
+          <button className="ed-icon-btn" onClick={startOver} aria-label="Rudi kwenye kamera">
             <CloseIcon />
           </button>
           <h2 className="ed-title">Hariri</h2>
@@ -664,7 +812,27 @@ function Upload() {
                 />
               </div>
 
-             <div className="ed-trim-row">
+              <div className="ed-trim-row">
+                <span className="ed-trim-label">Mwanzo</span>
+                <button className="ed-nudge" onClick={() => setStart(trimStart - 1)} aria-label="Rudisha sekunde 1">
+                  −
+                </button>
+                <input
+                  type="range"
+                  className="ed-range"
+                  min="0"
+                  max={duration}
+                  step={sliderStep}
+                  value={trimStart}
+                  onChange={(e) => setStart(Number(e.target.value))}
+                />
+                <button className="ed-nudge" onClick={() => setStart(trimStart + 1)} aria-label="Songa sekunde 1">
+                  +
+                </button>
+                <b className="ed-time">{fmt(trimStart)}</b>
+              </div>
+
+              <div className="ed-trim-row">
                 <span className="ed-trim-label">Mwisho</span>
                 <button className="ed-nudge" onClick={() => setEnd(trimEnd - 1)} aria-label="Rudisha sekunde 1">
                   −
@@ -712,6 +880,36 @@ function Upload() {
   return (
     <div className="ed-root">
       {content}
+
+      {preview && url && step === 'details' && (
+        <div className="ud-preview">
+          <video
+            className="ud-preview-video"
+            src={url}
+            autoPlay
+            loop
+            playsInline
+            style={{ filter: filterCss }}
+            onLoadedMetadata={(e) => {
+              e.currentTarget.currentTime = trimStart
+            }}
+            onTimeUpdate={(e) => {
+              const el = e.currentTarget
+              if (trimEnd && (el.currentTime >= trimEnd - 0.05 || el.currentTime < trimStart - 0.3)) {
+                el.currentTime = trimStart
+              }
+            }}
+          />
+          <button
+            className="ud-preview-close"
+            onClick={() => setPreview(false)}
+            aria-label="Funga hakiki"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+      )}
+
       <input
         ref={pickerRef}
         type="file"
