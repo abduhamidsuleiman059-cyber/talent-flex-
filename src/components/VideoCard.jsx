@@ -4,9 +4,11 @@ import { useVideos } from '../context/VideoContext'
 import CommentsSheet from './CommentsSheet'
 import ShareSheet from './ShareSheet'
 import Avatar from './Avatar'
+import OverlayLayer from './OverlayLayer'
 import { displayName } from '../utils/displayName'
 import { getFilterCss } from '../utils/videoFilters'
 import { getSound, setSound, subscribeSound } from '../utils/soundStore'
+import { useMusicSync } from '../utils/useMusicSync'
 import '../styles/videocard.css'
 import '../styles/videocard-video.css'
 import '../styles/videocard-like.css'
@@ -71,6 +73,7 @@ function VideoCard({ video }) {
 
   const cardRef = useRef(null)
   const videoRef = useRef(null)
+  const audioRef = useRef(null)
   const barRef = useRef(null)
   const checkTimer = useRef(null)
   const indicatorTimer = useRef(null)
@@ -95,6 +98,28 @@ function VideoCard({ video }) {
   // Sehemu iliyochaguliwa ya video (kupunguza)
   const trimStart = video.trimStart || 0
   const trimEnd = video.trimEnd || 0
+
+  // Muziki na maandishi/stika vilivyowekwa wakati wa kuhariri
+  const hasMusic = Boolean(video.musicUrl && video.videoUrl)
+  const musicVol = video.musicVol ?? 1
+  const videoVol = video.videoVol ?? 1
+  const overlays = video.overlays || []
+
+  useMusicSync(videoRef, audioRef, hasMusic, trimStart)
+
+  // Sauti ya video na muziki
+  useEffect(() => {
+    const v = videoRef.current
+    const a = audioRef.current
+    if (v) v.volume = hasMusic ? videoVol : 1
+    if (a) a.volume = musicVol
+  }, [hasMusic, videoVol, musicVol])
+
+  // Muziki unafuata hali ya sauti ya app
+  useEffect(() => {
+    const a = audioRef.current
+    if (a) a.muted = !sound
+  }, [sound, hasMusic])
 
   // Safisha timer kadi ikiondoka
   useEffect(() => {
@@ -347,6 +372,10 @@ function VideoCard({ video }) {
           draggable={false}
         />
       )}
+
+      {overlays.length > 0 && <OverlayLayer overlays={overlays} />}
+
+      {hasMusic && <audio ref={audioRef} src={video.musicUrl} loop preload="auto" />}
 
       {indicator && (
         <div className={`play-indicator ${indicator}`} key={indicator}>

@@ -223,6 +223,10 @@ function ShareSheet({ video, onClose }) {
         trimStart: video.trimStart || 0,
         trimEnd: video.trimEnd || 0,
         filter: video.filter ? getFilterCss(video.filter) : 'none',
+        overlays: video.overlays || [],
+        musicUrl: video.musicUrl || '',
+        musicVol: video.musicVol ?? 1,
+        videoVol: video.videoVol ?? 1,
         onProgress: (p) =>
           setDl(prev => (prev.status === 'working' ? { ...prev, progress: p } : prev)),
         signal: controller.signal

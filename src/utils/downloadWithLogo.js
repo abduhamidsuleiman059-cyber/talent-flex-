@@ -1,7 +1,10 @@
+import { drawOverlays } from './overlayDraw'
+
 // Muda wa skrini ya logo mwishoni (sekunde)
 const OUTRO_SECONDS = 2.5
-// Upande mrefu zaidi wa video ya mwisho (pixels)
-const MAX_SIDE = 1280
+// Ukubwa wa video ya mwisho: fremu ya 9:16, kama inavyoonekana kwenye Feed
+const OUT_W = 720
+const OUT_H = 1280
 // Rangi ya mandhari ya skrini ya logo
 const OUTRO_BG = '#0d0d0d'
 // Urefu wa juu wa sehemu inayopakuliwa (sekunde): dakika 5
@@ -78,6 +81,16 @@ function seekTo(video, t) {
   })
 }
 
+// Chora video ikijaza fremu nzima (kata pembeni kama Feed)
+function drawCover(ctx, video, cw, ch) {
+  const vw = video.videoWidth || cw
+  const vh = video.videoHeight || ch
+  const scale = Math.max(cw / vw, ch / vh)
+  const w = vw * scale
+  const h = vh * scale
+  ctx.drawImage(video, (cw - w) / 2, (ch - h) / 2, w, h)
+}
+
 function drawOutro(ctx, cw, ch, logo, username, alpha) {
   ctx.globalAlpha = 1
   ctx.fillStyle = OUTRO_BG
@@ -120,7 +133,7 @@ function drawOutro(ctx, cw, ch, logo, username, alpha) {
 }
 
 /**
- * Inaandaa video mpya: sehemu iliyochaguliwa ya video + filta + skrini ya logo mwishoni.
+ * Inaandaa video mpya: sehemu iliyochaguliwa + filta + maandishi/stika + muziki + skrini ya logo mwishoni.
  * Inarudisha { blob, ext, filterApplied }.
  */
 export async function downloadVideoWithLogo({
@@ -130,6 +143,10 @@ export async function downloadVideoWithLogo({
   trimStart = 0,
   trimEnd = 0,
   filter = 'none',
+  overlays = [],
+  musicUrl = '',
+  musicVol = 1,
+  videoVol = 1,
   onProgress,
   signal
 }) {
@@ -154,12 +171,8 @@ export async function downloadVideoWithLogo({
 
   if (clipLength > MAX_DOWNLOAD_SECONDS) throw makeError('TOO_LONG')
 
-  // Ukubwa wa video ya mwisho (namba shufwa)
-  const srcW = video.videoWidth || 720
-  const srcH = video.videoHeight || 1280
-  const scale = Math.min(1, MAX_SIDE / Math.max(srcW, srcH))
-  const cw = Math.max(2, Math.round((srcW * scale) / 2) * 2)
-  const ch = Math.max(2, Math.round((srcH * scale) / 2) * 2)
+  const cw = OUT_W
+  const ch = OUT_H
 
   const canvas = document.createElement('canvas')
   canvas.width = cw
@@ -179,19 +192,38 @@ export async function downloadVideoWithLogo({
 
   const stream = canvas.captureStream(30)
 
-  // Sauti: inanaswa kwenye rekodi bila kutoka kwenye spika
+  // Sauti: video na muziki vinachanganywa kwenye rekodi bila kutoka kwenye spika
   let audioCtx = null
+  let music = null
   const AudioCtx = window.AudioContext || window.webkitAudioContext
   if (AudioCtx) {
     try {
       audioCtx = new AudioCtx()
-      const source = audioCtx.createMediaElementSource(video)
       const dest = audioCtx.createMediaStreamDestination()
-      source.connect(dest)
+
+      const videoSource = audioCtx.createMediaElementSource(video)
+      const videoGain = audioCtx.createGain()
+      videoGain.gain.value = musicUrl ? videoVol : 1
+      videoSource.connect(videoGain)
+      videoGain.connect(dest)
+
+      if (musicUrl) {
+        music = new Audio()
+        music.src = musicUrl
+        music.loop = true
+        music.preload = 'auto'
+        const musicSource = audioCtx.createMediaElementSource(music)
+        const musicGain = audioCtx.createGain()
+        musicGain.gain.value = musicVol
+        musicSource.connect(musicGain)
+        musicGain.connect(dest)
+      }
+
       dest.stream.getAudioTracks().forEach(t => stream.addTrack(t))
       if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {})
     } catch {
       audioCtx = null
+      music = null
     }
   }
 
@@ -213,6 +245,15 @@ export async function downloadVideoWithLogo({
     let phase = 'video'
     let outroStart = 0
 
+    const stopMusic = () => {
+      if (!music) return
+      try {
+        music.pause()
+      } catch {
+        // hakuna cha kufanya
+      }
+    }
+
     const cleanup = () => {
       cancelAnimationFrame(rafId)
       if (signal) signal.removeEventListener('abort', onAbort)
@@ -227,6 +268,11 @@ export async function downloadVideoWithLogo({
         video.load()
       } catch {
         // hakuna cha kufanya
+      }
+      if (music) {
+        stopMusic()
+        music.removeAttribute('src')
+        music.load()
       }
       stream.getTracks().forEach(t => t.stop())
       if (audioCtx) audioCtx.close().catch(() => {})
@@ -268,6 +314,7 @@ export async function downloadVideoWithLogo({
       } catch {
         // hakuna cha kufanya
       }
+      stopMusic()
     }
 
     video.onended = beginOutro
@@ -282,15 +329,21 @@ export async function downloadVideoWithLogo({
       if (finished) return
 
       if (phase === 'video') {
+        ctx.fillStyle = '#000'
+        ctx.fillRect(0, 0, cw, ch)
+
         if (filterSupported) ctx.filter = useFilter ? filter : 'none'
-        ctx.drawImage(video, 0, 0, cw, ch)
+        drawCover(ctx, video, cw, ch)
+        // Maandishi na stika hazipaswi kupata filta
+        if (filterSupported) ctx.filter = 'none'
+        drawOverlays(ctx, overlays, cw, ch)
+
         report(video.currentTime - start)
 
         if (video.currentTime >= endTime - 0.04 || video.ended) {
           beginOutro()
         }
       } else {
-        // Skrini ya logo haipaswi kupata filta
         if (filterSupported) ctx.filter = 'none'
 
         const elapsed = (performance.now() - outroStart) / 1000
@@ -311,11 +364,15 @@ export async function downloadVideoWithLogo({
       rafId = requestAnimationFrame(tick)
     }
 
-    // Anza kurekodi na kucheza video
+    // Anza kurekodi na kucheza video (na muziki pamoja nayo)
     recorder.start()
     video
       .play()
       .then(() => {
+        if (music) {
+          music.currentTime = 0
+          music.play().catch(() => {})
+        }
         rafId = requestAnimationFrame(tick)
       })
       .catch(() => fail(makeError('PLAY_BLOCKED')))

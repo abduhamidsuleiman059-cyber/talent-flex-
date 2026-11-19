@@ -2,17 +2,52 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
 import CameraCapture from '../components/CameraCapture'
+import OverlayLayer from '../components/OverlayLayer'
+import EditedPlayer from '../components/EditedPlayer'
+import Avatar from '../components/Avatar'
 import { WhatsAppIcon, TelegramIcon, FacebookIcon, XIcon } from '../components/SocialIcons'
-import { FILTERS, getFilterCss } from '../utils/videoFilters'
+import {
+  BackIcon,
+  CloseIcon,
+  MusicIcon,
+  GearIcon,
+  ScissorsIcon,
+  TextIcon,
+  StickerIcon,
+  FilterIcon,
+  MinusIcon,
+  PlusIcon,
+  EditIcon,
+  TrashIcon,
+  PlayIcon
+} from '../components/EditorIcons'
+import {
+  TrimSheet,
+  FilterSheet,
+  StickerSheet,
+  MusicSheet,
+  SettingsSheet,
+  TextEditor,
+  TEXT_COLORS
+} from '../components/EditorSheets'
+import { useMusicSync } from '../utils/useMusicSync'
+import { getFilterCss } from '../utils/videoFilters'
 import { frameDataUrl, captureFrame, cropToDataUrl } from '../utils/imageTools'
+import { addStatus, STATUS_TTL_MS } from '../utils/statusStore'
+import { authorInfo, myHandle } from '../utils/statusAuthor'
 import '../styles/upload-editor.css'
 import '../styles/upload-cover.css'
 import '../styles/upload-tiktok.css'
+import '../styles/editor-tiktok.css'
 
 // Muda wa juu wa video (sekunde): dakika 30
 const MAX_SECONDS = 30 * 60
 // Video iliyopunguzwa isiwe fupi kuliko sekunde 1
 const MIN_CLIP = 1
+// Vikomo vya status
+const STATUS_MAX_S = 30
+const STATUS_MAX_MB = 80
+const MAX_OVERLAYS = 12
 const TAGS = ['#TalentFlex', '#Kipaji', '#Tanzania', '#BongoTalent', '#Muziki', '#Mpira']
 
 const SHARE_APPS = [
@@ -44,66 +79,19 @@ function fmt(sec) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-function CloseIcon() {
+function newId(prefix) {
+  return `${prefix}${Date.now()}${Math.random().toString(36).slice(2, 6)}`
+}
+
+function isAudioFile(file) {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
+    (file.type && file.type.startsWith('audio/')) ||
+    /\.(mp3|m4a|aac|wav|ogg|opus|flac|amr)$/i.test(file.name || '')
   )
 }
 
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="15 18 9 12 15 6" />
-    </svg>
-  )
-}
-
-function PlayIcon({ size = 30 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor">
-      <polygon points="7 4 20 12 7 20 7 4" />
-    </svg>
-  )
-}
-
-function ScissorsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="6" cy="6" r="3" />
-      <circle cx="6" cy="18" r="3" />
-      <line x1="20" y1="4" x2="8.12" y2="15.88" />
-      <line x1="14.47" y1="14.48" x2="20" y2="20" />
-      <line x1="8.12" y1="8.12" x2="12" y2="12" />
-    </svg>
-  )
-}
-
-function SparkIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4L12 3z" />
-      <path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z" />
-    </svg>
-  )
-}
-
-function SoundIcon({ on }) {
-  return on ? (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" />
-      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-      <path d="M19 5a10 10 0 0 1 0 14" />
-    </svg>
-  ) : (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" />
-      <line x1="22" y1="9" x2="16" y2="15" />
-      <line x1="16" y1="9" x2="22" y2="15" />
-    </svg>
-  )
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value))
 }
 
 function ShareIcon() {
@@ -146,8 +134,6 @@ function Upload() {
 
   // edit | details | cover | done
   const [step, setStep] = useState('edit')
-  // trim | filter
-  const [tab, setTab] = useState('trim')
   const [trimStart, setTrimStart] = useState(0)
   const [trimEnd, setTrimEnd] = useState(0)
   const [filterId, setFilterId] = useState('none')
@@ -165,17 +151,48 @@ function Upload() {
   const [coverTime, setCoverTime] = useState(0)
   const [coverError, setCoverError] = useState('')
 
+  // Zana za kuhariri
+  const [overlays, setOverlays] = useState([])
+  const [selectedId, setSelectedId] = useState(null)
+  // null | trim | filter | sticker | music | settings
+  const [tool, setTool] = useState(null)
+  const [textDraft, setTextDraft] = useState(null)
+  const [music, setMusic] = useState(null)
+  const [musicError, setMusicError] = useState('')
+  const [musicVol, setMusicVol] = useState(0.9)
+  const [videoVol, setVideoVol] = useState(1)
+  const [allowComments, setAllowComments] = useState(true)
+  const [toast, setToast] = useState('')
+  const [statusBusy, setStatusBusy] = useState(false)
+
   const pickerRef = useRef(null)
   const coverImgRef = useRef(null)
   const captionRef = useRef(null)
   const videoRef = useRef(null)
+  const audioRef = useRef(null)
   const coverVideoRef = useRef(null)
+  const frameRef = useRef(null)
+  const dragRef = useRef(null)
+  const toastTimer = useRef(null)
   const publishedUrlRef = useRef(null)
 
   const clipLength = Math.max(0, trimEnd - trimStart)
   const minGap = Math.min(MIN_CLIP, duration)
   const sliderStep = duration > 120 ? 1 : 0.1
   const filterCss = getFilterCss(filterId)
+
+  const me = myHandle()
+  const myInfo = authorInfo(me)
+
+  const showToast = (message) => {
+    setToast(message)
+    clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(''), 2200)
+  }
+
+  useEffect(() => {
+    return () => clearTimeout(toastTimer.current)
+  }, [])
 
   // Soma video mpya na weka hali ya kuanzia
   useEffect(() => {
@@ -189,7 +206,6 @@ function Upload() {
     setLoadError('')
     setUrl(null)
     setStep('edit')
-    setTab('trim')
     setFilterId('none')
     setCaption('')
     setShowTags(false)
@@ -202,6 +218,16 @@ function Upload() {
     setCoverTouched(false)
     setCoverError('')
     setDurationFixed(false)
+    setOverlays([])
+    setSelectedId(null)
+    setTool(null)
+    setTextDraft(null)
+    setMusic(null)
+    setMusicError('')
+    setMusicVol(0.9)
+    setVideoVol(1)
+    setAllowComments(true)
+    setToast('')
 
     probe.onloadedmetadata = () => {
       if (cancelled) return
@@ -253,10 +279,30 @@ function Upload() {
     }
   }, [file])
 
-  // Sauti ya kicheza cha kuhariri
+  // Futa link ya muziki ukibadilika au ukiondoka
   useEffect(() => {
-    if (videoRef.current) videoRef.current.muted = muted
-  }, [muted])
+    const musicUrl = music && music.url
+    return () => {
+      if (musicUrl) URL.revokeObjectURL(musicUrl)
+    }
+  }, [music])
+
+  // Sauti ya video na muziki wa kicheza cha kuhariri
+  useEffect(() => {
+    const v = videoRef.current
+    const a = audioRef.current
+    if (v) {
+      v.muted = muted
+      v.volume = music ? videoVol : 1
+    }
+    if (a) {
+      a.muted = muted
+      a.volume = musicVol
+    }
+  }, [muted, music, videoVol, musicVol, step])
+
+  // Muziki unaenda sambamba na video
+  useMusicSync(videoRef, audioRef, Boolean(music) && step === 'edit', trimStart, step)
 
   // Jalada la moja kwa moja: fremu ya kwanza ya sehemu iliyochaguliwa (kama hujachagua lako)
   useEffect(() => {
@@ -309,6 +355,10 @@ function Upload() {
   const togglePlay = () => {
     const el = videoRef.current
     if (!el) return
+    setSelectedId(null)
+
+    if (muted) setMuted(false)
+
     if (el.paused) {
       el.play().catch(() => {})
     } else {
@@ -340,6 +390,168 @@ function Upload() {
     const v = Math.min(duration, Math.max(value, trimStart + minGap))
     setTrimEnd(v)
     seekPreview(Math.max(trimStart, v - 1.5))
+  }
+
+  // ===== Maandishi na stika =====
+
+  const openNewText = () => {
+    setTool(null)
+    setTextDraft({ id: null, text: '', color: TEXT_COLORS[0], box: false })
+  }
+
+  const editSelectedText = () => {
+    const item = overlays.find(o => o.id === selectedId)
+    if (!item || item.kind !== 'text') return
+    setTextDraft({ id: item.id, text: item.text, color: item.color, box: Boolean(item.box) })
+  }
+
+  const commitText = () => {
+    if (!textDraft) return
+    const text = textDraft.text.trim()
+
+    if (!text) {
+      setTextDraft(null)
+      return
+    }
+
+    if (textDraft.id) {
+      setOverlays(prev =>
+        prev.map(o =>
+          o.id === textDraft.id
+            ? { ...o, text, color: textDraft.color, box: textDraft.box }
+            : o
+        )
+      )
+    } else if (overlays.length >= MAX_OVERLAYS) {
+      showToast(`Unaweza kuweka hadi vipengee ${MAX_OVERLAYS}.`)
+    } else {
+      const item = {
+        id: newId('ov'),
+        kind: 'text',
+        text,
+        color: textDraft.color,
+        box: textDraft.box,
+        size: 7,
+        x: 50,
+        y: 45
+      }
+      setOverlays(prev => [...prev, item])
+      setSelectedId(item.id)
+    }
+
+    setTextDraft(null)
+  }
+
+  const addSticker = (emoji) => {
+    if (overlays.length >= MAX_OVERLAYS) {
+      showToast(`Unaweza kuweka hadi vipengee ${MAX_OVERLAYS}.`)
+      return
+    }
+
+    const item = {
+      id: newId('ov'),
+      kind: 'sticker',
+      text: emoji,
+      color: '#ffffff',
+      box: false,
+      size: 18,
+      x: 50,
+      y: 50
+    }
+    setOverlays(prev => [...prev, item])
+    setSelectedId(item.id)
+    setTool(null)
+  }
+
+  const changeSize = (factor) => {
+    setOverlays(prev =>
+      prev.map(o => {
+        if (o.id !== selectedId) return o
+        const [min, max] = o.kind === 'sticker' ? [8, 50] : [3, 16]
+        return { ...o, size: clamp(Number((o.size * factor).toFixed(2)), min, max) }
+      })
+    )
+  }
+
+  const deleteSelected = () => {
+    setOverlays(prev => prev.filter(o => o.id !== selectedId))
+    setSelectedId(null)
+  }
+
+  // Kuburuta kipengee ndani ya fremu
+  const onItemDown = (e, item) => {
+    e.stopPropagation()
+    const frame = frameRef.current
+    if (!frame) return
+
+    setSelectedId(item.id)
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // hakuna cha kufanya
+    }
+
+    dragRef.current = {
+      id: item.id,
+      pointerId: e.pointerId,
+      rect: frame.getBoundingClientRect(),
+      startX: e.clientX,
+      startY: e.clientY,
+      ox: item.x,
+      oy: item.y
+    }
+  }
+
+  const onItemMove = (e) => {
+    const d = dragRef.current
+    if (!d || d.pointerId !== e.pointerId) return
+
+    const x = clamp(d.ox + ((e.clientX - d.startX) / d.rect.width) * 100, 3, 97)
+    const y = clamp(d.oy + ((e.clientY - d.startY) / d.rect.height) * 100, 3, 97)
+
+    setOverlays(prev => prev.map(o => (o.id === d.id ? { ...o, x, y } : o)))
+  }
+
+  const onItemUp = (e) => {
+    const d = dragRef.current
+    if (!d || d.pointerId !== e.pointerId) return
+
+    dragRef.current = null
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      // hakuna cha kufanya
+    }
+  }
+
+  // ===== Muziki =====
+
+  const handleMusicPick = (picked) => {
+    setMusicError('')
+
+    if (!isAudioFile(picked)) {
+      setMusicError('Chagua faili la sauti (mp3, m4a, wav...).')
+      return
+    }
+
+    const hadMusic = Boolean(music)
+    setMusic({
+      file: picked,
+      url: URL.createObjectURL(picked),
+      name: picked.name.replace(/\.[^.]+$/, '') || 'Muziki'
+    })
+
+    if (!hadMusic) {
+      setMusicVol(0.9)
+      setVideoVol(0.4)
+    }
+  }
+
+  const removeMusic = () => {
+    setMusic(null)
+    setVideoVol(1)
+    setMusicError('')
   }
 
   // ===== Jalada =====
@@ -429,13 +641,70 @@ function Upload() {
       trimStart: trimStart > 0.05 ? trimStart : 0,
       trimEnd: durationFixed || trimEnd < duration - 0.05 ? trimEnd : 0,
       filter: filterId,
-      allowComments: true,
-      cover
+      allowComments,
+      cover,
+      overlays,
+      hasMusic: Boolean(music),
+      musicName: music ? music.name : '',
+      musicVol,
+      videoVol: music ? videoVol : 1,
+      musicFile: music ? music.file : null
     })
 
     setSavedOk(saved)
     setPublishing(false)
     setStep('done')
+  }
+
+  // Weka kama status moja kwa moja
+  const handleStatus = async () => {
+    if (statusBusy || !url || !file) return
+
+    if (clipLength > STATUS_MAX_S) {
+      showToast(`Status isizidi sekunde ${STATUS_MAX_S}. Punguza video kwanza.`)
+      setTool('trim')
+      return
+    }
+
+    if (file.size > STATUS_MAX_MB * 1024 * 1024) {
+      showToast(`Video ni kubwa mno kwa status (MB ${STATUS_MAX_MB}).`)
+      return
+    }
+
+    setStatusBusy(true)
+
+    const now = Date.now()
+    const item = {
+      id: newId('s'),
+      author: me,
+      type: 'video',
+      caption: '',
+      duration: clipLength,
+      createdAt: now,
+      expiresAt: now + STATUS_TTL_MS,
+      views: [],
+      likes: [],
+      comments: [],
+      edit: {
+        trimStart,
+        trimEnd,
+        filter: filterId,
+        overlays,
+        hasMusic: Boolean(music),
+        musicName: music ? music.name : '',
+        musicVol,
+        videoVol: music ? videoVol : 1
+      }
+    }
+
+    const ok = await addStatus(item, file, music ? music.file : null)
+    setStatusBusy(false)
+
+    if (ok) {
+      navigate('/messages')
+    } else {
+      showToast('Imeshindwa kuhifadhi status. Nafasi ya kivinjari inaweza kuwa imejaa.')
+    }
   }
 
   const shareNow = (appId) => {
@@ -464,7 +733,7 @@ function Upload() {
       <>
         <div className="ed-top">
           <button className="ed-icon-btn" onClick={startOver} aria-label="Rudi">
-            <BackIcon />
+            <BackIcon size={22} />
           </button>
           <h2 className="ed-title">Video mpya</h2>
           <span className="ed-top-space" />
@@ -493,7 +762,7 @@ function Upload() {
   } else if (step === 'done') {
     const chosen = SHARE_APPS.filter(a => shareApps.includes(a.id))
 
-    content = (
+   content = (
       <div className="ed-center">
         <div className="ed-success-icon">
           <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
@@ -543,7 +812,7 @@ function Upload() {
             onClick={() => setStep('details')}
             aria-label="Rudi"
           >
-            <BackIcon />
+            <BackIcon size={22} />
           </button>
           <h2 className="ed-title">Jalada</h2>
           <span className="ed-top-space" />
@@ -609,7 +878,7 @@ function Upload() {
             aria-label="Rudi kuhariri"
             disabled={publishing}
           >
-            <BackIcon />
+            <BackIcon size={22} />
           </button>
           <h2 className="ed-title">Chapisha</h2>
           <button
@@ -680,7 +949,7 @@ function Upload() {
             </div>
           )}
 
-        <div className="ud-share">
+          <div className="ud-share">
             <button
               type="button"
               className="ud-share-row"
@@ -735,145 +1004,194 @@ function Upload() {
       </>
     )
   } else {
+    const selected = overlays.find(o => o.id === selectedId) || null
+
     content = (
-      <>
-        <div className="ed-top">
-          <button className="ed-icon-btn" onClick={startOver} aria-label="Rudi kwenye kamera">
-            <CloseIcon />
-          </button>
-          <h2 className="ed-title">Hariri</h2>
-          <span className="ed-top-space" />
-        </div>
+      <div className="ed2" onClick={() => setSelectedId(null)}>
+        <div className="ed2-stage">
+          <div className="ed2-frame" ref={frameRef}>
+            <video
+              ref={videoRef}
+              className="ed2-video"
+              src={url}
+              playsInline
+              loop
+              style={{ filter: filterCss }}
+              onLoadedMetadata={() => seekPreview(trimStart)}
+              onLoadedData={tryPlay}
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onTimeUpdate={(e) => keepInRange(e.currentTarget)}
+              onClick={(e) => {
+                e.stopPropagation()
+                togglePlay()
+              }}
+            />
 
-        <div className="ed-stage">
-          <video
-            ref={videoRef}
-            className="ed-video"
-            src={url}
-            playsInline
-            loop
-            style={{ filter: filterCss }}
-            onLoadedMetadata={() => seekPreview(trimStart)}
-            onLoadedData={tryPlay}
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onTimeUpdate={(e) => keepInRange(e.currentTarget)}
-            onClick={togglePlay}
-          />
+            <OverlayLayer
+              overlays={overlays}
+              interactive
+              selectedId={selectedId}
+              onDown={onItemDown}
+              onMove={onItemMove}
+              onUp={onItemUp}
+            />
 
-          {!playing && (
-            <span className="ed-play">
-              <PlayIcon />
-            </span>
-          )}
+            {!playing && (
+              <span className="ed2-play">
+                <PlayIcon />
+              </span>
+            )}
 
-          <button
-            className="ed-mute"
-            onClick={() => setMuted(m => !m)}
-            aria-label={muted ? 'Washa sauti' : 'Zima sauti'}
-          >
-            <SoundIcon on={!muted} />
-          </button>
-        </div>
+            <div className="ed2-top">
+              <button className="ed2-round" onClick={startOver} aria-label="Rudi kwenye kamera">
+                <BackIcon size={22} />
+              </button>
 
-        <div className="ed-panel">
-          <div className="ed-tabs">
-            <button
-              className={tab === 'trim' ? 'ed-tab active' : 'ed-tab'}
-              onClick={() => setTab('trim')}
-            >
-              <ScissorsIcon />
-              Punguza
-            </button>
-            <button
-              className={tab === 'filter' ? 'ed-tab active' : 'ed-tab'}
-              onClick={() => setTab('filter')}
-            >
-              <SparkIcon />
-              Filta
-            </button>
-          </div>
+              <button
+                className="ed2-sound"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setTool('music')
+                }}
+              >
+                <MusicIcon size={18} />
+                <span>{music ? music.name : 'Ongeza muziki'}</span>
+              </button>
 
-          {tab === 'trim' && (
-            <>
-              <div className="ed-trim-info">
-                <span>Muda mpya wa video</span>
-                <b>
-                  {fmt(clipLength)} / {fmt(duration)}
-                </b>
-              </div>
-
-              <div className="ed-timeline">
-                <span
-                  style={{
-                    left: `${(trimStart / duration) * 100}%`,
-                    width: `${(clipLength / duration) * 100}%`
-                  }}
-                />
-              </div>
-
-              <div className="ed-trim-row">
-                <span className="ed-trim-label">Mwanzo</span>
-                <button className="ed-nudge" onClick={() => setStart(trimStart - 1)} aria-label="Rudisha sekunde 1">
-                  −
-                </button>
-                <input
-                  type="range"
-                  className="ed-range"
-                  min="0"
-                  max={duration}
-                  step={sliderStep}
-                  value={trimStart}
-                  onChange={(e) => setStart(Number(e.target.value))}
-                />
-                <button className="ed-nudge" onClick={() => setStart(trimStart + 1)} aria-label="Songa sekunde 1">
-                  +
-                </button>
-                <b className="ed-time">{fmt(trimStart)}</b>
-              </div>
-
-              <div className="ed-trim-row">
-                <span className="ed-trim-label">Mwisho</span>
-                <button className="ed-nudge" onClick={() => setEnd(trimEnd - 1)} aria-label="Rudisha sekunde 1">
-                  −
-                </button>
-                <input
-                  type="range"
-                  className="ed-range"
-                  min="0"
-                  max={duration}
-                  step={sliderStep}
-                  value={trimEnd}
-                  onChange={(e) => setEnd(Number(e.target.value))}
-                />
-                <button className="ed-nudge" onClick={() => setEnd(trimEnd + 1)} aria-label="Songa sekunde 1">
-                  +
-                </button>
-                <b className="ed-time">{fmt(trimEnd)}</b>
-              </div>
-            </>
-          )}
-
-          {tab === 'filter' && (
-            <div className="ed-filters">
-              {FILTERS.map(f => (
-                <button
-                  key={f.id}
-                  className={filterId === f.id ? 'ed-filter active' : 'ed-filter'}
-                  onClick={() => setFilterId(f.id)}
-                >
-                  <span className="ed-filter-swatch" style={{ filter: f.css }} />
-                  <span>{f.label}</span>
-                </button>
-              ))}
+              <button
+                className="ed2-round"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setTool('settings')
+                }}
+                aria-label="Mipangilio"
+              >
+                <GearIcon size={22} />
+              </button>
             </div>
-          )}
 
-          <button className="ed-primary" onClick={() => setStep('details')}>
+            <div className="ed2-tools" onClick={(e) => e.stopPropagation()}>
+              <button
+                className={tool === 'trim' ? 'ed2-tool on' : 'ed2-tool'}
+                onClick={() => setTool('trim')}
+              >
+                <ScissorsIcon />
+                <span>Punguza</span>
+              </button>
+              <button className="ed2-tool" onClick={openNewText}>
+                <TextIcon />
+                <span>Maandishi</span>
+              </button>
+              <button
+                className={tool === 'sticker' ? 'ed2-tool on' : 'ed2-tool'}
+                onClick={() => setTool('sticker')}
+              >
+                <StickerIcon />
+                <span>Stika</span>
+              </button>
+              <button
+                className={tool === 'filter' ? 'ed2-tool on' : 'ed2-tool'}
+                onClick={() => setTool('filter')}
+              >
+                <FilterIcon />
+                <span>Filta</span>
+              </button>
+            </div>
+
+            {selected && (
+              <div className="ed2-selbar" onClick={(e) => e.stopPropagation()}>
+                {selected.kind === 'text' && (
+                  <button className="ed2-selbtn" onClick={editSelectedText} aria-label="Hariri maandishi">
+                    <EditIcon />
+                  </button>
+                )}
+                <button className="ed2-selbtn" onClick={() => changeSize(0.85)} aria-label="Punguza ukubwa">
+                  <MinusIcon />
+                </button>
+                <button className="ed2-selbtn" onClick={() => changeSize(1.18)} aria-label="Kuza">
+                  <PlusIcon />
+                </button>
+                <button className="ed2-selbtn danger" onClick={deleteSelected} aria-label="Futa">
+                  <TrashIcon />
+                </button>
+              </div>
+            )}
+
+            {toast && <div className="ed2-toast">{toast}</div>}
+          </div>
+        </div>
+
+        <div className="ed2-bottom" onClick={(e) => e.stopPropagation()}>
+          <button className="ed2-story" onClick={handleStatus} disabled={statusBusy}>
+            <Avatar username={me} src={myInfo.avatar} label={myInfo.name} size={26} />
+            {statusBusy ? 'Subiri...' : 'Status yako'}
+          </button>
+          <button className="ed2-next" onClick={() => setStep('details')}>
             Endelea
           </button>
         </div>
-      </>
+
+        {music && <audio ref={audioRef} src={music.url} loop preload="auto" />}
+
+        {tool === 'trim' && (
+          <TrimSheet
+            duration={duration}
+            trimStart={trimStart}
+            trimEnd={trimEnd}
+            sliderStep={sliderStep}
+            fmt={fmt}
+            onStart={setStart}
+            onEnd={setEnd}
+            onDone={() => setTool(null)}
+          />
+        )}
+
+        {tool === 'filter' && (
+          <FilterSheet
+            filterId={filterId}
+            onChange={setFilterId}
+            onDone={() => setTool(null)}
+          />
+        )}
+
+        {tool === 'sticker' && (
+          <StickerSheet onPick={addSticker} onDone={() => setTool(null)} />
+        )}
+
+        {tool === 'music' && (
+          <MusicSheet
+            music={music}
+            musicVol={musicVol}
+            videoVol={videoVol}
+            error={musicError}
+            onPick={handleMusicPick}
+            onRemove={removeMusic}
+            onMusicVol={setMusicVol}
+            onVideoVol={setVideoVol}
+            onDone={() => setTool(null)}
+          />
+        )}
+
+        {tool === 'settings' && (
+          <SettingsSheet
+            allowComments={allowComments}
+            onAllowComments={setAllowComments}
+            videoVol={videoVol}
+            onVideoVol={setVideoVol}
+            onDone={() => setTool(null)}
+          />
+        )}
+
+        {textDraft && (
+          <TextEditor
+            draft={textDraft}
+            onChange={(patch) => setTextDraft(prev => ({ ...prev, ...patch }))}
+            onCancel={() => setTextDraft(null)}
+            onDone={commitText}
+          />
+        )}
+      </div>
     )
   }
 
@@ -883,29 +1201,22 @@ function Upload() {
 
       {preview && url && step === 'details' && (
         <div className="ud-preview">
-          <video
-            className="ud-preview-video"
-            src={url}
-            autoPlay
-            loop
-            playsInline
-            style={{ filter: filterCss }}
-            onLoadedMetadata={(e) => {
-              e.currentTarget.currentTime = trimStart
-            }}
-            onTimeUpdate={(e) => {
-              const el = e.currentTarget
-              if (trimEnd && (el.currentTime >= trimEnd - 0.05 || el.currentTime < trimStart - 0.3)) {
-                el.currentTime = trimStart
-              }
-            }}
+          <EditedPlayer
+            url={url}
+            trimStart={trimStart}
+            trimEnd={trimEnd}
+            filterCss={filterCss}
+            overlays={overlays}
+            musicUrl={music ? music.url : ''}
+            musicVol={musicVol}
+            videoVol={music ? videoVol : 1}
           />
           <button
             className="ud-preview-close"
             onClick={() => setPreview(false)}
             aria-label="Funga hakiki"
           >
-            <CloseIcon />
+            <CloseIcon size={20} />
           </button>
         </div>
       )}

@@ -75,11 +75,22 @@ export function VideoProvider({ children }) {
         try {
           const blob = await getVideoBlob(m.id)
           if (blob) {
+            let musicUrl = ''
+            if (m.hasMusic) {
+              try {
+                const musicBlob = await getVideoBlob(`music-${m.id}`)
+                if (musicBlob) musicUrl = URL.createObjectURL(musicBlob)
+              } catch {
+                // video itacheza bila muziki
+              }
+            }
+
             // Hakuna ukaguzi tena: video zote zinaonekana kwenye Feed
             restored.push({
               ...m,
               status: 'approved',
-              videoUrl: URL.createObjectURL(blob)
+              videoUrl: URL.createObjectURL(blob),
+              ...(musicUrl ? { musicUrl } : {})
             })
           }
         } catch (err) {
@@ -119,7 +130,12 @@ export function VideoProvider({ children }) {
         trimEnd: v.trimEnd,
         filter: v.filter,
         allowComments: v.allowComments,
-        cover: v.cover
+        cover: v.cover,
+        overlays: v.overlays,
+        hasMusic: v.hasMusic,
+        musicName: v.musicName,
+        musicVol: v.musicVol,
+        videoVol: v.videoVol
       }))
     try {
       localStorage.setItem(META_KEY, JSON.stringify(meta))
@@ -167,11 +183,13 @@ export function VideoProvider({ children }) {
   // Chapisha video moja kwa moja kwenye Feed.
   // Inarudisha true kama video imehifadhiwa kabisa, false kama imeshindwa kuhifadhiwa.
   const publishVideo = async (video) => {
+    const { musicFile, ...rest } = video
     const id = Date.now()
     let saved = true
+    let musicUrl = ''
 
     try {
-      const res = await fetch(video.videoUrl)
+      const res = await fetch(rest.videoUrl)
       const blob = await res.blob()
       await saveVideoBlob(id, blob)
     } catch (err) {
@@ -179,18 +197,35 @@ export function VideoProvider({ children }) {
       saved = false
     }
 
+    if (musicFile) {
+      try {
+        await saveVideoBlob(`music-${id}`, musicFile)
+      } catch (err) {
+        console.error('Imeshindwa kuhifadhi muziki', err)
+        saved = false
+      }
+      musicUrl = URL.createObjectURL(musicFile)
+    }
+
     setVideos(prev => [
-      { ...video, id, status: 'approved', isUser: true },
+      {
+        ...rest,
+        id,
+        status: 'approved',
+        isUser: true,
+        ...(musicUrl ? { musicUrl } : {})
+      },
       ...prev
     ])
 
     return saved
   }
 
-  // Futa video kabisa (pamoja na maoni na like zake)
+  // Futa video kabisa (pamoja na muziki, maoni na like zake)
   const deleteVideo = (id) => {
     setVideos(prev => prev.filter(v => v.id !== id))
     deleteVideoBlob(id).catch(() => {})
+    deleteVideoBlob(`music-${id}`).catch(() => {})
     setComments(prev => {
       const next = { ...prev }
       delete next[id]

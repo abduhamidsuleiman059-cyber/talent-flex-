@@ -1,0 +1,4 @@
+/* Video ya status iliyohaririwa inajaza skrini kama Feed */
+.sv-video.cover {
+  object-fit: cover;
+}

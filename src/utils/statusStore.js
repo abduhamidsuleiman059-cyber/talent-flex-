@@ -23,7 +23,7 @@ export const TEXT_BACKGROUNDS = [
 const listeners = new Set()
 const urlCache = new Map()
 
-// ===== IndexedDB (video za status) =====
+// ===== IndexedDB (video na muziki wa status) =====
 
 function openDb() {
   return new Promise((resolve, reject) => {
@@ -76,11 +76,26 @@ function idbDelete(key) {
   )
 }
 
-function revokeUrl(id) {
-  const url = urlCache.get(id)
+function revokeUrl(key) {
+  const url = urlCache.get(key)
   if (url) {
     URL.revokeObjectURL(url)
-    urlCache.delete(id)
+    urlCache.delete(key)
+  }
+}
+
+function musicKey(id) {
+  return `${id}-music`
+}
+
+// Futa faili za video na muziki za status
+function cleanupBlobs(item) {
+  if (item.type !== 'video') return
+  idbDelete(item.id).catch(() => {})
+  revokeUrl(item.id)
+  if (item.edit && item.edit.hasMusic) {
+    idbDelete(musicKey(item.id)).catch(() => {})
+    revokeUrl(musicKey(item.id))
   }
 }
 
@@ -138,9 +153,7 @@ function initItems() {
 
   const now = Date.now()
   const alive = list.filter(i => i.expiresAt > now)
-  list
-    .filter(i => i.expiresAt <= now && i.type === 'video')
-    .forEach(i => idbDelete(i.id).catch(() => {}))
+  list.filter(i => i.expiresAt <= now).forEach(cleanupBlobs)
 
   rawSet(ITEMS_KEY, JSON.stringify(alive))
   return alive
@@ -174,12 +187,7 @@ function prune() {
   const alive = items.filter(i => i.expiresAt > now)
   if (alive.length === items.length) return
 
-  items
-    .filter(i => i.expiresAt <= now && i.type === 'video')
-    .forEach(i => {
-      idbDelete(i.id).catch(() => {})
-      revokeUrl(i.id)
-    })
+  items.filter(i => i.expiresAt <= now).forEach(cleanupBlobs)
 
   commit(alive)
   persist()
@@ -215,13 +223,16 @@ export function groupStatuses(list) {
 }
 
 // Inarudisha true ikifanikiwa kuhifadhi
-export async function addStatus(item, blob) {
+export async function addStatus(item, blob, musicBlob = null) {
   prune()
 
   if (blob) {
     try {
       await idbPut(item.id, blob)
+      if (musicBlob) await idbPut(musicKey(item.id), musicBlob)
     } catch {
+      idbDelete(item.id).catch(() => {})
+      idbDelete(musicKey(item.id)).catch(() => {})
       return false
     }
   }
@@ -231,7 +242,10 @@ export async function addStatus(item, blob) {
 
   if (!persist()) {
     commit(previous)
-    if (blob) idbDelete(item.id).catch(() => {})
+    if (blob) {
+      idbDelete(item.id).catch(() => {})
+      idbDelete(musicKey(item.id)).catch(() => {})
+    }
     return false
   }
 
@@ -243,10 +257,7 @@ export function deleteStatus(id) {
   commit(items.filter(i => i.id !== id))
   persist()
 
-  if (target && target.type === 'video') {
-    idbDelete(id).catch(() => {})
-    revokeUrl(id)
-  }
+  if (target) cleanupBlobs(target)
 }
 
 export function markViewed(id, handle) {
@@ -276,17 +287,26 @@ export function addStatusComment(id, handle, text) {
   patch(id, i => ({ ...i, comments: [...i.comments, comment] }))
 }
 
-// Link ya video ya status (kutoka IndexedDB)
-export async function getStatusVideoUrl(id) {
-  if (urlCache.has(id)) return urlCache.get(id)
+async function blobUrlFor(key) {
+  if (urlCache.has(key)) return urlCache.get(key)
 
   try {
-    const blob = await idbGet(id)
+    const blob = await idbGet(key)
     if (!blob) return ''
     const url = URL.createObjectURL(blob)
-    urlCache.set(id, url)
+    urlCache.set(key, url)
     return url
   } catch {
     return ''
   }
+}
+
+// Link ya video ya status (kutoka IndexedDB)
+export function getStatusVideoUrl(id) {
+  return blobUrlFor(id)
+}
+
+// Link ya muziki wa status (kutoka IndexedDB)
+export function getStatusMusicUrl(id) {
+  return blobUrlFor(musicKey(id))
 }

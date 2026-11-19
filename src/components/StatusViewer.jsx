@@ -6,11 +6,16 @@ import {
   addStatusComment,
   deleteStatus,
   getStatusVideoUrl,
+  getStatusMusicUrl,
   TEXT_BACKGROUNDS
 } from '../utils/statusStore'
 import { authorInfo, myHandle } from '../utils/statusAuthor'
+import { getFilterCss } from '../utils/videoFilters'
+import { useMusicSync } from '../utils/useMusicSync'
 import Avatar from './Avatar'
+import OverlayLayer from './OverlayLayer'
 import '../styles/story.css'
+import '../styles/story-edit.css'
 
 const PHOTO_MS = 5000
 
@@ -113,9 +118,11 @@ function StatusViewer({ handle, onClose }) {
   const [text, setText] = useState('')
   const [toast, setToast] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
+  const [musicUrl, setMusicUrl] = useState('')
 
   const fillRef = useRef(null)
   const videoRef = useRef(null)
+  const audioRef = useRef(null)
   const downRef = useRef(0)
   const toastTimer = useRef(null)
   const nextRef = useRef(() => {})
@@ -123,6 +130,9 @@ function StatusViewer({ handle, onClose }) {
 
   const item = list[index] || null
   const isVideo = Boolean(item && item.type === 'video')
+  const edit = item && item.edit ? item.edit : null
+  const trimStart = edit ? edit.trimStart || 0 : 0
+  const trimEnd = edit ? edit.trimEnd || 0 : 0
   const stopped = paused || sheet !== null || focused
   pausedRef.current = stopped
 
@@ -136,6 +146,18 @@ function StatusViewer({ handle, onClose }) {
   }
 
   nextRef.current = goNext
+
+  // Muziki unaenda sambamba na video
+  const hasMusic = Boolean(edit && edit.hasMusic && musicUrl && videoUrl)
+  useMusicSync(videoRef, audioRef, hasMusic, trimStart, item ? item.id : 0)
+
+  // Sauti ya video na muziki
+  useEffect(() => {
+    const v = videoRef.current
+    const a = audioRef.current
+    if (v) v.volume = edit && edit.hasMusic ? edit.videoVol ?? 1 : 1
+    if (a) a.volume = edit ? edit.musicVol ?? 1 : 1
+  }, [edit, videoUrl, musicUrl])
 
   // Orodha ikibadilika (mfano ukifuta status)
   useEffect(() => {
@@ -167,15 +189,23 @@ function StatusViewer({ handle, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item && item.id, isMine])
 
-  // Pakia video ya status
+  // Pakia video na muziki wa status
   useEffect(() => {
     setVideoUrl('')
+    setMusicUrl('')
     if (!item || item.type !== 'video') return
 
     let cancelled = false
     getStatusVideoUrl(item.id).then(u => {
       if (!cancelled) setVideoUrl(u)
     })
+
+    if (item.edit && item.edit.hasMusic) {
+      getStatusMusicUrl(item.id).then(u => {
+        if (!cancelled) setMusicUrl(u)
+      })
+    }
+
     return () => {
       cancelled = true
     }
@@ -274,6 +304,20 @@ function StatusViewer({ handle, onClose }) {
     deleteStatus(item.id)
   }
 
+  const handleVideoTime = (e) => {
+    const v = e.currentTarget
+    const end = trimEnd || v.duration
+
+    if (!Number.isFinite(end) || end <= trimStart) return
+
+    if (fillRef.current) {
+      const p = ((v.currentTime - trimStart) / (end - trimStart)) * 100
+      fillRef.current.style.width = `${Math.min(100, Math.max(0, p))}%`
+    }
+
+    if (edit && v.currentTime >= end - 0.05) nextRef.current()
+  }
+
   let content = null
   if (item.type === 'photo') {
     content = <img className="sv-photo" src={item.image} alt="" draggable={false} />
@@ -287,16 +331,15 @@ function StatusViewer({ handle, onClose }) {
     content = (
       <video
         ref={videoRef}
-        className="sv-video"
+        className={edit ? 'sv-video cover' : 'sv-video'}
         src={videoUrl}
         playsInline
         autoPlay
-        onTimeUpdate={(e) => {
-          const v = e.currentTarget
-          if (fillRef.current && v.duration) {
-            fillRef.current.style.width = `${(v.currentTime / v.duration) * 100}%`
-          }
+        style={edit && edit.filter ? { filter: getFilterCss(edit.filter) } : undefined}
+        onLoadedMetadata={(e) => {
+          if (trimStart > 0) e.currentTarget.currentTime = trimStart
         }}
+        onTimeUpdate={handleVideoTime}
         onEnded={() => nextRef.current()}
       />
     )
@@ -312,6 +355,14 @@ function StatusViewer({ handle, onClose }) {
         onPointerLeave={() => setPaused(false)}
       >
         {content}
+
+        {edit && edit.overlays && edit.overlays.length > 0 && (
+          <OverlayLayer overlays={edit.overlays} />
+        )}
+
+        {edit && edit.hasMusic && musicUrl && (
+          <audio ref={audioRef} src={musicUrl} loop preload="auto" />
+        )}
       </div>
 
       <div className="sv-top">

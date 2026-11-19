@@ -1,0 +1,49 @@
+.ov-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  container-type: inline-size;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ov-item {
+  position: absolute;
+  width: max-content;
+  max-width: 80cqw;
+  font-size: calc(var(--s, 7) * 1cqw);
+  line-height: 1.25;
+  text-align: center;
+  white-space: pre-wrap;
+  word-break: break-word;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ov-item.text {
+  font-family: Roboto, 'Segoe UI', system-ui, sans-serif;
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ov-item.text.box {
+  padding: 0.15em 0.35em;
+  border-radius: 0.25em;
+  text-shadow: none;
+}
+
+.ov-item.sticker {
+  line-height: 1;
+}
+
+.ov-item.live {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+}
+
+.ov-item.selected {
+  outline: 1.5px dashed rgba(255, 255, 255, 0.9);
+  outline-offset: 0.15em;
+}
