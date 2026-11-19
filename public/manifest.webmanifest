@@ -1,7 +1,7 @@
 {
   "name": "TalentFlex",
   "short_name": "TalentFlex",
-  "description": "Onyesha kipaji chako",
+  "description": "Watch, share & connect",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

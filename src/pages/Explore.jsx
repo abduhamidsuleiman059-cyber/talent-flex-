@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useVideos } from '../context/VideoContext'
 import VideoCard from '../components/VideoCard'
+import TileGlyph from '../components/TileGlyph'
 import { displayName } from '../utils/displayName'
 import { getFilterCss } from '../utils/videoFilters'
 import '../styles/explore.css'
@@ -45,37 +46,6 @@ function HeartIcon() {
   )
 }
 
-// Ikoni kwenye video za mfano (zisizo na faili halisi)
-function TileGlyph({ category }) {
-  if (category === 'ball') {
-    return (
-      <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" />
-        <polygon points="12 8 15.5 10.5 14.2 14.5 9.8 14.5 8.5 10.5" />
-        <line x1="12" y1="8" x2="12" y2="3.2" />
-        <line x1="15.5" y1="10.5" x2="20" y2="9" />
-        <line x1="14.2" y1="14.5" x2="17" y2="18.5" />
-        <line x1="9.8" y1="14.5" x2="7" y2="18.5" />
-        <line x1="8.5" y1="10.5" x2="4" y2="9" />
-      </svg>
-    )
-  }
-  if (category === 'music') {
-    return (
-      <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 18V5l12-2v13" />
-        <circle cx="6" cy="18" r="3" />
-        <circle cx="18" cy="16" r="3" />
-      </svg>
-    )
-  }
-  return (
-    <svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor">
-      <polygon points="7 4 20 12 7 20 7 4" />
-    </svg>
-  )
-}
-
 function Explore() {
   const { videos, likedIds } = useVideos()
   const [query, setQuery] = useState('')
@@ -108,12 +78,12 @@ function Explore() {
     return () => window.removeEventListener('keydown', onKey)
   }, [selected])
 
-  const heading = q ? `Matokeo (${results.length})` : 'Zinazovuma'
+  const heading = q ? `Results (${results.length})` : 'Trending'
 
   return (
     <>
       <div className="explore-wrapper">
-        <h2 className="explore-title">Gundua</h2>
+        <h2 className="explore-title">Explore</h2>
 
         <div className="explore-search">
           <span className="explore-search-icon">
@@ -122,7 +92,7 @@ function Explore() {
           <input
             type="text"
             className="explore-search-input"
-            placeholder="Tafuta video au watumiaji..."
+            placeholder="Search videos or people"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             maxLength={40}
@@ -131,7 +101,7 @@ function Explore() {
             <button
               className="explore-search-clear"
               onClick={() => setQuery('')}
-              aria-label="Futa maandishi"
+              aria-label="Clear"
             >
               <CloseIcon size={12} />
             </button>
@@ -143,7 +113,7 @@ function Explore() {
         {results.length === 0 ? (
           <div className="explore-empty">
             <SearchIcon />
-            <p>Hakuna video iliyopatikana.</p>
+            <p>No results</p>
             <span>Jaribu neno lingine.</span>
           </div>
         ) : (
@@ -154,7 +124,7 @@ function Explore() {
                 className="explore-tile"
                 style={{ background: video.gradient || '#222' }}
                 onClick={() => setSelectedId(video.id)}
-                aria-label={`Fungua video ya ${displayName(video.username)}`}
+                aria-label={`Open video by ${displayName(video.username)}`}
               >
                 {video.cover ? (
                   <img
@@ -198,7 +168,7 @@ function Explore() {
           <button
             className="explore-back"
             onClick={() => setSelectedId(null)}
-            aria-label="Rudi"
+            aria-label="Close"
           >
             <BackIcon />
           </button>

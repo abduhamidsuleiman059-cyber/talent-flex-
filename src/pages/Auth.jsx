@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
   getAccounts,
-  getAccountName,
   signIn,
   signUp,
   normalizeUsername,
@@ -108,7 +107,7 @@ function passwordScore(pw) {
   return Math.min(4, score)
 }
 
-const STRENGTH_LABEL = ['Fupi mno', 'Dhaifu', 'Wastani', 'Nzuri', 'Imara']
+const STRENGTH_LABEL = ['Too short', 'Weak', 'Okay', 'Good', 'Strong']
 
 // mode: 'first' (hujaingia) au 'add' (ongeza akaunti ukiwa ndani ya app)
 function Auth({ mode }) {
@@ -138,9 +137,9 @@ function Auth({ mode }) {
       if (formatError) {
         userHint = { ok: false, text: formatError }
       } else if (accounts.some(a => a.username === unameNorm)) {
-        userHint = { ok: false, text: 'Jina hili limeshatumika kwenye kifaa hiki.' }
+        userHint = { ok: false, text: 'Jina limetumika.' }
       } else {
-        userHint = { ok: true, text: 'Jina linapatikana' }
+        userHint = { ok: true, text: 'Available' }
       }
     }
   }
@@ -182,9 +181,7 @@ function Auth({ mode }) {
 
   const handleGoogle = () => {
     setError('')
-    setNotice(
-      'Kuingia na Google kutawashwa tukiunganisha seva (backend). Kwa sasa tumia jina la mtumiaji na nenosiri.'
-    )
+    setNotice('Google login inakuja hivi karibuni.')
   }
 
   const cancelAdd = () => {
@@ -206,7 +203,7 @@ function Auth({ mode }) {
           />
         )}
         <p className="av-tagline">
-          {mode === 'add' ? 'Ongeza akaunti nyingine' : 'Onyesha kipaji chako kwa dunia'}
+          {mode === 'add' ? 'Add another account' : 'Watch, share & connect'}
         </p>
       </div>
 
@@ -218,20 +215,20 @@ function Auth({ mode }) {
             className={tab === 'signin' ? 'av-tab active' : 'av-tab'}
             onClick={() => switchTab('signin')}
           >
-            Ingia
+            Login
           </button>
           <button
             type="button"
             className={tab === 'signup' ? 'av-tab active' : 'av-tab'}
             onClick={() => switchTab('signup')}
           >
-            Jisajili
+            Sign up
           </button>
         </div>
 
         <button type="button" className="av-google" onClick={handleGoogle}>
           <GoogleIcon />
-          <span>Endelea na Google</span>
+          <span>Continue with Google</span>
         </button>
 
         {notice && (
@@ -241,19 +238,19 @@ function Auth({ mode }) {
           </p>
         )}
 
-        <div className="av-divider">au tumia jina la mtumiaji</div>
+        <div className="av-divider">or</div>
 
         <form className="av-form" onSubmit={handleSubmit}>
           {isSignup && (
             <div className="av-field">
-              <label className="av-label" htmlFor="avName">Jina lako</label>
+              <label className="av-label" htmlFor="avName">Name</label>
               <div className="av-input-wrap av-wrap-focus">
                 <span className="av-input-icon"><UserIcon /></span>
                 <input
                   id="avName"
                   className="av-input"
                   type="text"
-                  placeholder="Mfano: Abdu Hamid"
+                  placeholder="e.g. Abdu Hamid"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={20}
@@ -264,14 +261,14 @@ function Auth({ mode }) {
           )}
 
           <div className="av-field">
-            <label className="av-label" htmlFor="avUser">Jina la mtumiaji</label>
+            <label className="av-label" htmlFor="avUser">Username</label>
             <div className="av-input-wrap av-wrap-focus">
               <span className="av-input-icon"><AtIcon /></span>
               <input
                 id="avUser"
                 className="av-input"
                 type="text"
-                placeholder="mfano: abdu"
+                placeholder="e.g. abdu"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 maxLength={21}
@@ -289,14 +286,14 @@ function Auth({ mode }) {
           </div>
 
           <div className="av-field">
-            <label className="av-label" htmlFor="avPass">Nenosiri</label>
+            <label className="av-label" htmlFor="avPass">Password</label>
             <div className="av-input-wrap av-wrap-focus">
               <span className="av-input-icon"><LockIcon /></span>
               <input
                 id="avPass"
                 className="av-input has-eye"
                 type={showPw ? 'text' : 'password'}
-                placeholder="Angalau herufi 6"
+                placeholder="6+ characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
@@ -305,7 +302,7 @@ function Auth({ mode }) {
                 type="button"
                 className="av-eye"
                 onClick={() => setShowPw(v => !v)}
-                aria-label={showPw ? 'Ficha nenosiri' : 'Onyesha nenosiri'}
+                aria-label={showPw ? 'Hide password' : 'Show password'}
               >
                 <EyeIcon off={showPw} />
               </button>
@@ -326,14 +323,14 @@ function Auth({ mode }) {
 
           {isSignup && (
             <div className="av-field">
-              <label className="av-label" htmlFor="avConfirm">Thibitisha nenosiri</label>
+              <label className="av-label" htmlFor="avConfirm">Confirm password</label>
               <div className="av-input-wrap av-wrap-focus">
                 <span className="av-input-icon"><ShieldIcon /></span>
                 <input
                   id="avConfirm"
                   className="av-input"
                   type={showPw ? 'text' : 'password'}
-                  placeholder="Andika tena nenosiri"
+                  placeholder="Repeat password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   autoComplete="new-password"
@@ -355,18 +352,16 @@ function Auth({ mode }) {
             className="av-submit"
             disabled={busy || !username || !password || (isSignup && !confirm)}
           >
-            {busy ? 'Subiri...' : isSignup ? 'Fungua akaunti' : 'Ingia'}
+            {busy ? 'Please wait...' : isSignup ? 'Create account' : 'Login'}
           </button>
 
           {mode === 'add' && (
             <button type="button" className="av-cancel" onClick={cancelAdd}>
-              Ghairi
+              Cancel
             </button>
           )}
         </form>
       </div>
-
-      <p className="av-terms">Kwa kuendelea, unakubali masharti na sera ya faragha ya TalentFlex.</p>
     </div>
   )
 }

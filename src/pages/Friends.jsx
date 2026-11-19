@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
 import Avatar from '../components/Avatar'
+import FollowButton from '../components/FollowButton'
 import { displayName } from '../utils/displayName'
 import '../styles/profile.css'
 import '../styles/friends.css'
@@ -18,12 +19,12 @@ function ChatIcon() {
 
 function Friends() {
   const navigate = useNavigate()
-  const { videos, followedUsers, toggleFollow } = useVideos()
+  const { videos, followedUsers } = useVideos()
 
   const approved = videos.filter(v => v.status === 'approved')
   const countFor = (name) => approved.filter(v => v.username === name).length
 
-  // Watu wa kufuata: wenye video zilizoidhinishwa ambao hujawafuata
+  // Watu wa kufuata: wenye video ambao hujawafuata
   const suggestions = Array.from(new Set(approved.map(v => v.username))).filter(
     name => name !== ME && !followedUsers.includes(name)
   )
@@ -38,14 +39,12 @@ function Friends() {
 
   return (
     <div className="friends-wrapper">
-      <h2 className="friends-title">Marafiki</h2>
+      <h2 className="friends-title">Friends</h2>
 
-      <h3 className="friends-heading">Unaowafuata ({followedUsers.length})</h3>
+      <h3 className="friends-heading">Following ({followedUsers.length})</h3>
 
       {followedUsers.length === 0 ? (
-        <p className="friends-empty">
-          Hujamfuata mtu yeyote bado. Chagua kutoka kwenye orodha hapa chini.
-        </p>
+        <p className="friends-empty">Hujafuata mtu bado.</p>
       ) : (
         <div className="follow-list">
           {followedUsers.map(name => (
@@ -55,35 +54,28 @@ function Friends() {
 
                 <span className="follow-main">
                   <span className="follow-name">{displayName(name)}</span>
-                  <span className="follow-meta">{countFor(name)} video</span>
+                  <span className="follow-meta">{countFor(name)} videos</span>
                 </span>
               </button>
 
               <button
                 className="follow-msg"
                 onClick={() => openChat(name)}
-                aria-label={`Mtumie ujumbe ${displayName(name)}`}
+                aria-label={`Message ${displayName(name)}`}
               >
                 <ChatIcon />
               </button>
 
-              <button
-                className="follow-unfollow"
-                onClick={() => toggleFollow(name)}
-              >
-                Acha kufuata
-              </button>
+              <FollowButton username={name} size="sm" />
             </div>
           ))}
         </div>
       )}
 
-      <h3 className="friends-heading">Watu unaoweza kuwafuata</h3>
+      <h3 className="friends-heading">Suggested</h3>
 
       {suggestions.length === 0 ? (
-        <p className="friends-empty">
-          Umewafuata wote waliopo kwa sasa. Wengine wakipakia video, wataonekana hapa.
-        </p>
+        <p className="friends-empty">Hakuna wapya kwa sasa.</p>
       ) : (
         <div className="follow-list">
           {suggestions.map(name => (
@@ -93,13 +85,11 @@ function Friends() {
 
                 <span className="follow-main">
                   <span className="follow-name">{displayName(name)}</span>
-                  <span className="follow-meta">{countFor(name)} video</span>
+                  <span className="follow-meta">{countFor(name)} videos</span>
                 </span>
               </button>
 
-              <button className="follow-add" onClick={() => toggleFollow(name)}>
-                Fuata
-              </button>
+              <FollowButton username={name} size="sm" />
             </div>
           ))}
         </div>

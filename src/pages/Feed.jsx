@@ -69,7 +69,7 @@ function Feed() {
         <button
           className="feed-search"
           onClick={() => navigate('/explore')}
-          aria-label="Gundua"
+          aria-label="Explore"
         >
           <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <circle cx="11" cy="11" r="7" />
@@ -81,12 +81,10 @@ function Feed() {
       <div className="feed-scroll" ref={scrollRef}>
         {list.length === 0 && tab === 'following' && (
           <div className="feed-empty">
-            <p>Hujamfuata mtu yeyote bado</p>
-            <span>
-              Video za watu unaowafuata zitaonekana hapa. Tafuta vipaji upate watu wa kuwafuata.
-            </span>
+            <p>No videos yet</p>
+            <span>Fuata watu ili uone video zao hapa.</span>
             <button className="feed-empty-btn" onClick={() => navigate('/explore')}>
-              Gundua vipaji
+              Explore
             </button>
           </div>
         )}

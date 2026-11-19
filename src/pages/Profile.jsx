@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
 import VideoCard from '../components/VideoCard'
 import Avatar from '../components/Avatar'
+import FollowButton from '../components/FollowButton'
+import TileGlyph from '../components/TileGlyph'
 import { avatarGradient, avatarLetter } from '../utils/avatar'
 import { displayName } from '../utils/displayName'
 import { getFilterCss } from '../utils/videoFilters'
@@ -111,40 +113,9 @@ function UsersIcon() {
   )
 }
 
-// Ikoni kwenye video za mfano (zisizo na faili halisi)
-function TileGlyph({ category }) {
-  if (category === 'ball') {
-    return (
-      <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" />
-        <polygon points="12 8 15.5 10.5 14.2 14.5 9.8 14.5 8.5 10.5" />
-        <line x1="12" y1="8" x2="12" y2="3.2" />
-        <line x1="15.5" y1="10.5" x2="20" y2="9" />
-        <line x1="14.2" y1="14.5" x2="17" y2="18.5" />
-        <line x1="9.8" y1="14.5" x2="7" y2="18.5" />
-        <line x1="8.5" y1="10.5" x2="4" y2="9" />
-      </svg>
-    )
-  }
-  if (category === 'music') {
-    return (
-      <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 18V5l12-2v13" />
-        <circle cx="6" cy="18" r="3" />
-        <circle cx="18" cy="16" r="3" />
-      </svg>
-    )
-  }
-  return (
-    <svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor">
-      <polygon points="7 4 20 12 7 20 7 4" />
-    </svg>
-  )
-}
-
 function Profile() {
   const navigate = useNavigate()
-  const { videos, likedIds, followedUsers, toggleFollow } = useVideos()
+  const { videos, likedIds, followedUsers } = useVideos()
   const current = getCurrent()
   const handle = current ? `@${current.username}` : ME
 
@@ -188,7 +159,7 @@ function Profile() {
       return true
     } catch (err) {
       console.error('Imeshindwa kuhifadhi wasifu', err)
-      setImgError('Imeshindwa kuhifadhi. Nafasi ya kivinjari inaweza kuwa imejaa.')
+      setImgError('Imeshindwa kuhifadhi. Nafasi imejaa?')
       return false
     }
   }
@@ -229,7 +200,7 @@ function Profile() {
           : await cropToDataUrl(file, 960, 480)
       persist({ ...profile, [kind]: dataUrl })
     } catch {
-      setImgError('Imeshindwa kusoma picha hii. Jaribu nyingine.')
+      setImgError('Picha haisomeki. Jaribu nyingine.')
     }
   }
 
@@ -239,7 +210,7 @@ function Profile() {
         className="explore-tile"
         style={{ background: video.gradient || '#222' }}
         onClick={() => setSelectedId(video.id)}
-        aria-label={`Fungua video ya ${displayName(video.username)}`}
+        aria-label={`Open video by ${displayName(video.username)}`}
       >
         {video.cover ? (
           <img
@@ -292,7 +263,7 @@ function Profile() {
           <button
             className="pf-round-btn pf-settings"
             onClick={() => navigate('/settings')}
-            aria-label="Mipangilio"
+            aria-label="Settings"
           >
             <GearIcon />
           </button>
@@ -300,7 +271,7 @@ function Profile() {
           <button
             className="pf-round-btn pf-cover-edit"
             onClick={() => coverInput.current && coverInput.current.click()}
-            aria-label="Badilisha background"
+            aria-label="Change cover"
           >
             <CameraIcon />
           </button>
@@ -314,7 +285,7 @@ function Profile() {
               style={profile.avatar ? undefined : { background: avatarGradient(ME) }}
             >
               {profile.avatar ? (
-                <img src={profile.avatar} alt="Picha ya wasifu" />
+                <img src={profile.avatar} alt="Profile" />
               ) : (
                 avatarLetter(profile.name)
               )}
@@ -323,7 +294,7 @@ function Profile() {
             <button
               className="pf-avatar-edit"
               onClick={() => avatarInput.current && avatarInput.current.click()}
-              aria-label="Badilisha picha ya wasifu"
+              aria-label="Change photo"
             >
               <CameraIcon size={15} />
             </button>
@@ -332,11 +303,11 @@ function Profile() {
           <div className="pf-stats">
             <div className="pf-stat">
               <b>{followedUsers.length}</b>
-              <span>Unaowafuata</span>
+              <span>Following</span>
             </div>
             <div className="pf-stat">
               <b>0</b>
-              <span>Wafuasi</span>
+              <span>Followers</span>
             </div>
             <div className="pf-stat">
               <b>{formatCount(totalLikes)}</b>
@@ -369,17 +340,17 @@ function Profile() {
           {profile.bio ? (
             <p className="pf-bio">{profile.bio}</p>
           ) : (
-            <p className="pf-bio muted">Hujaandika maelezo bado.</p>
+            <p className="pf-bio muted">No bio yet.</p>
           )}
 
           {imgError && <p className="pf-error">{imgError}</p>}
         </div>
 
-        {/* ===== Hariri wasifu ===== */}
+        {/* ===== Edit profile ===== */}
         {editing ? (
           <div className="pf-section" style={{ marginTop: 14 }}>
             <form className="profile-form" onSubmit={saveEdit}>
-              <label className="profile-label" htmlFor="profileName">Jina</label>
+              <label className="profile-label" htmlFor="profileName">Name</label>
               <input
                 id="profileName"
                 className="profile-input"
@@ -387,10 +358,10 @@ function Profile() {
                 value={draftName}
                 onChange={(e) => setDraftName(e.target.value)}
                 maxLength={20}
-                placeholder="Jina lako"
+                placeholder="Your name"
               />
 
-              <label className="profile-label" htmlFor="profileBio">Maelezo (bio)</label>
+              <label className="profile-label" htmlFor="profileBio">Bio</label>
               <textarea
                 id="profileBio"
                 className="profile-input profile-textarea"
@@ -398,7 +369,7 @@ function Profile() {
                 onChange={(e) => setDraftBio(e.target.value)}
                 maxLength={80}
                 rows={3}
-                placeholder="Eleza kipaji chako kwa ufupi..."
+                placeholder="Andika kitu kukuhusu..."
               />
               <span className="profile-count">{draftBio.length}/80</span>
 
@@ -408,10 +379,10 @@ function Profile() {
                   className="profile-btn ghost"
                   onClick={() => setEditing(false)}
                 >
-                  Ghairi
+                  Cancel
                 </button>
                 <button type="submit" className="profile-btn primary">
-                  Hifadhi
+                  Save
                 </button>
               </div>
             </form>
@@ -419,7 +390,7 @@ function Profile() {
         ) : (
           <div className="pf-actions">
             <button className="profile-edit-btn" onClick={startEdit}>
-              Hariri wasifu
+              Edit profile
             </button>
           </div>
         )}
@@ -430,7 +401,7 @@ function Profile() {
             <button
               className={tab === 'mine' ? 'profile-tab active' : 'profile-tab'}
               onClick={() => setTab('mine')}
-              aria-label="Video zangu"
+              aria-label="My videos"
             >
               <GridIcon />
               <span className="pf-tab-count">{myVideos.length}</span>
@@ -438,7 +409,7 @@ function Profile() {
             <button
               className={tab === 'liked' ? 'profile-tab active' : 'profile-tab'}
               onClick={() => setTab('liked')}
-              aria-label="Zilizopendwa"
+              aria-label="Liked"
             >
               <HeartOutlineIcon />
               <span className="pf-tab-count">{likedVideos.length}</span>
@@ -446,7 +417,7 @@ function Profile() {
             <button
               className={tab === 'following' ? 'profile-tab active' : 'profile-tab'}
               onClick={() => setTab('following')}
-              aria-label="Unaowafuata"
+              aria-label="Following"
             >
               <UsersIcon />
               <span className="pf-tab-count">{followedUsers.length}</span>
@@ -456,8 +427,8 @@ function Profile() {
           {tab === 'mine' && (
             myVideos.length === 0 ? (
               <div className="profile-empty">
-                <p>Hujapakia video bado.</p>
-                <span>Gusa kitufe cha + kwenye navbar kupakia video yako ya kwanza.</span>
+                <p>No videos yet</p>
+                <span>Gusa + kupost ya kwanza.</span>
               </div>
             ) : (
               <div className="explore-grid">
@@ -469,8 +440,7 @@ function Profile() {
           {tab === 'liked' && (
             likedVideos.length === 0 ? (
               <div className="profile-empty">
-                <p>Hujapenda video yoyote bado.</p>
-                <span>Video unazopenda zitaonekana hapa.</span>
+                <p>No liked videos</p>
               </div>
             ) : (
               <div className="explore-grid">
@@ -482,8 +452,7 @@ function Profile() {
           {tab === 'following' && (
             followingInfo.length === 0 ? (
               <div className="profile-empty">
-                <p>Hujamfuata mtu yeyote bado.</p>
-                <span>Gusa + kwenye duara la mtumiaji kwenye Feed kumfuata.</span>
+                <p>Not following anyone</p>
               </div>
             ) : (
               <div className="follow-list">
@@ -493,23 +462,18 @@ function Profile() {
 
                     <span className="follow-main">
                       <span className="follow-name">{displayName(item.name)}</span>
-                      <span className="follow-meta">{item.count} video</span>
+                      <span className="follow-meta">{item.count} videos</span>
                     </span>
 
                     <button
                       className="follow-msg"
                       onClick={() => navigate(`/messages/${encodeURIComponent(item.name)}`)}
-                      aria-label={`Mtumie ujumbe ${displayName(item.name)}`}
+                      aria-label={`Message ${displayName(item.name)}`}
                     >
                       <ChatIcon />
                     </button>
 
-                    <button
-                      className="follow-unfollow"
-                      onClick={() => toggleFollow(item.name)}
-                    >
-                      Acha kufuata
-                    </button>
+                    <FollowButton username={item.name} size="sm" />
                   </div>
                 ))}
               </div>
@@ -524,7 +488,7 @@ function Profile() {
           <button
             className="explore-back"
             onClick={() => setSelectedId(null)}
-            aria-label="Rudi"
+            aria-label="Close"
           >
             <BackIcon />
           </button>

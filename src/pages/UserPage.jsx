@@ -3,6 +3,7 @@ import { useNavigate, useParams, Navigate } from 'react-router-dom'
 import { useVideos } from '../context/VideoContext'
 import VideoCard from '../components/VideoCard'
 import Avatar from '../components/Avatar'
+import FollowButton from '../components/FollowButton'
 import TileGlyph from '../components/TileGlyph'
 import { avatarGradient } from '../utils/avatar'
 import { displayName } from '../utils/displayName'
@@ -56,11 +57,10 @@ function UserPage() {
   const params = useParams()
   const name = safeDecode(params.name)
 
-  const { videos, likedIds, followedUsers, toggleFollow } = useVideos()
+  const { videos, likedIds } = useVideos()
   const [selectedId, setSelectedId] = useState(null)
 
   const userVideos = videos.filter(v => v.username === name && v.status === 'approved')
-  const following = followedUsers.includes(name)
   const totalLikes = userVideos.reduce(
     (sum, v) => sum + v.likes + (likedIds.includes(v.id) ? 1 : 0),
     0
@@ -92,7 +92,7 @@ function UserPage() {
           <button
             className="pf-round-btn up-back"
             onClick={() => navigate(-1)}
-            aria-label="Rudi"
+            aria-label="Back"
           >
             <BackIcon />
           </button>
@@ -106,7 +106,7 @@ function UserPage() {
           <div className="pf-stats">
             <div className="pf-stat">
               <b>{userVideos.length}</b>
-              <span>Video</span>
+              <span>Videos</span>
             </div>
             <div className="pf-stat">
               <b>{formatCount(totalLikes)}</b>
@@ -121,26 +121,21 @@ function UserPage() {
         </div>
 
         <div className="up-actions">
-          <button
-            className={following ? 'up-btn ghost' : 'up-btn primary'}
-            onClick={() => toggleFollow(name)}
-          >
-            {following ? 'Unamfuata' : 'Fuata'}
-          </button>
+          <FollowButton username={name} size="lg" />
           <button
             className="up-btn ghost"
             onClick={() => navigate(`/messages/${encodeURIComponent(name)}`)}
           >
             <ChatIcon />
-            Ujumbe
+            Message
           </button>
         </div>
 
         <div className="pf-body">
-          <h3 className="up-heading">Video ({userVideos.length})</h3>
+          <h3 className="up-heading">Videos ({userVideos.length})</h3>
 
           {userVideos.length === 0 ? (
-            <p className="up-empty">Hajapakia video bado.</p>
+            <p className="up-empty">Hakuna video bado.</p>
           ) : (
             <div className="explore-grid">
               {userVideos.map(video => (
@@ -149,7 +144,7 @@ function UserPage() {
                   className="explore-tile"
                   style={{ background: video.gradient || '#222' }}
                   onClick={() => setSelectedId(video.id)}
-                  aria-label={`Fungua video ya ${title}`}
+                  aria-label={`Open video by ${title}`}
                 >
                   {video.cover ? (
                     <img
@@ -194,7 +189,7 @@ function UserPage() {
           <button
             className="explore-back"
             onClick={() => setSelectedId(null)}
-            aria-label="Funga video"
+            aria-label="Close"
           >
             <BackIcon />
           </button>

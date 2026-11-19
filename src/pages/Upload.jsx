@@ -48,7 +48,7 @@ const MIN_CLIP = 1
 const STATUS_MAX_S = 30
 const STATUS_MAX_MB = 80
 const MAX_OVERLAYS = 12
-const TAGS = ['#TalentFlex', '#Kipaji', '#Tanzania', '#BongoTalent', '#Muziki', '#Mpira']
+const TAGS = ['#TalentFlex', '#Trending', '#Tanzania', '#Music', '#Sports', '#Comedy']
 
 const SHARE_APPS = [
   { id: 'whatsapp', label: 'WhatsApp', Icon: WhatsAppIcon },
@@ -242,15 +242,13 @@ function Upload() {
           d = known
           fixed = true
         } else {
-          setLoadError('Imeshindwa kusoma video hii. Jaribu faili nyingine.')
+          setLoadError('Video haisomeki. Jaribu nyingine.')
           return
         }
       }
 
       if (d > MAX_SECONDS) {
-        setLoadError(
-          `Video ni ndefu sana (${fmt(d)}). Muda wa juu ni dakika ${MAX_SECONDS / 60}.`
-        )
+        setLoadError(`Video ni ndefu (${fmt(d)}). Max ni dakika ${MAX_SECONDS / 60}.`)
         return
       }
 
@@ -263,7 +261,7 @@ function Upload() {
 
     probe.onerror = () => {
       if (!cancelled) {
-        setLoadError('Imeshindwa kusoma video hii. Jaribu faili nyingine.')
+        setLoadError('Video haisomeki. Jaribu nyingine.')
       }
     }
 
@@ -337,8 +335,7 @@ function Upload() {
     e.target.value = ''
     if (picked) setFile(picked)
   }
-
-  // ===== Kicheza cha kuhariri =====
+// ===== Kicheza cha kuhariri =====
 
   const tryPlay = () => {
     const el = videoRef.current
@@ -423,7 +420,7 @@ function Upload() {
         )
       )
     } else if (overlays.length >= MAX_OVERLAYS) {
-      showToast(`Unaweza kuweka hadi vipengee ${MAX_OVERLAYS}.`)
+      showToast(`Max ${MAX_OVERLAYS} items.`)
     } else {
       const item = {
         id: newId('ov'),
@@ -444,7 +441,7 @@ function Upload() {
 
   const addSticker = (emoji) => {
     if (overlays.length >= MAX_OVERLAYS) {
-      showToast(`Unaweza kuweka hadi vipengee ${MAX_OVERLAYS}.`)
+      showToast(`Max ${MAX_OVERLAYS} items.`)
       return
     }
 
@@ -539,7 +536,7 @@ function Upload() {
     setMusic({
       file: picked,
       url: URL.createObjectURL(picked),
-      name: picked.name.replace(/\.[^.]+$/, '') || 'Muziki'
+      name: picked.name.replace(/\.[^.]+$/, '') || 'Music'
     })
 
     if (!hadMusic) {
@@ -594,7 +591,7 @@ function Upload() {
       setCoverTouched(true)
       setStep('details')
     } catch {
-      setCoverError('Imeshindwa kusoma picha hii. Jaribu nyingine.')
+      setCoverError('Picha haisomeki. Jaribu nyingine.')
     }
   }
 
@@ -661,13 +658,13 @@ function Upload() {
     if (statusBusy || !url || !file) return
 
     if (clipLength > STATUS_MAX_S) {
-      showToast(`Status isizidi sekunde ${STATUS_MAX_S}. Punguza video kwanza.`)
+      showToast(`Status ni hadi sekunde ${STATUS_MAX_S}. Trim video kwanza.`)
       setTool('trim')
       return
     }
 
     if (file.size > STATUS_MAX_MB * 1024 * 1024) {
-      showToast(`Video ni kubwa mno kwa status (MB ${STATUS_MAX_MB}).`)
+      showToast(`Video ni kubwa mno (max ${STATUS_MAX_MB}MB).`)
       return
     }
 
@@ -703,7 +700,7 @@ function Upload() {
     if (ok) {
       navigate('/messages')
     } else {
-      showToast('Imeshindwa kuhifadhi status. Nafasi ya kivinjari inaweza kuwa imejaa.')
+      showToast('Imeshindwa kuhifadhi status. Nafasi inaweza kuwa imejaa.')
     }
   }
 
@@ -711,11 +708,10 @@ function Upload() {
     const link = `${window.location.origin}${import.meta.env.BASE_URL}`
     const base = caption.trim().slice(0, 80)
     const text = base
-      ? `Tazama kipaji changu kwenye TalentFlex: ${base}`
-      : 'Tazama kipaji changu kwenye TalentFlex'
+      ? `Tazama video yangu kwenye TalentFlex: ${base}`
+      : 'Tazama video yangu kwenye TalentFlex'
     window.open(shareUrl(appId, text, link), '_blank', 'noopener,noreferrer')
   }
-
   // ===== Skrini =====
 
   let content
@@ -732,21 +728,21 @@ function Upload() {
     content = (
       <>
         <div className="ed-top">
-          <button className="ed-icon-btn" onClick={startOver} aria-label="Rudi">
+          <button className="ed-icon-btn" onClick={startOver} aria-label="Back">
             <BackIcon size={22} />
           </button>
-          <h2 className="ed-title">Video mpya</h2>
+          <h2 className="ed-title">New video</h2>
           <span className="ed-top-space" />
         </div>
         <div className="ed-center">
-          <h2>Video haikubaliki</h2>
+          <h2>Can't use this video</h2>
           <p className="ed-error">{loadError}</p>
           <div className="ed-actions">
             <button className="ed-primary" onClick={openPicker}>
-              Chagua nyingine
+              Choose another
             </button>
             <button className="ed-ghost" onClick={startOver}>
-              Rudi kwenye kamera
+              Back to camera
             </button>
           </div>
         </div>
@@ -756,32 +752,31 @@ function Upload() {
     content = (
       <div className="ed-center">
         <div className="ed-spinner" />
-        <p>Inasoma video...</p>
+        <p>Loading...</p>
       </div>
     )
   } else if (step === 'done') {
     const chosen = SHARE_APPS.filter(a => shareApps.includes(a.id))
 
-   content = (
+    content = (
       <div className="ed-center">
         <div className="ed-success-icon">
           <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <h2>Video imechapishwa!</h2>
-        <p>Iko kwenye Feed sasa na inaonekana kwa wengine.</p>
+        <h2>Posted!</h2>
+        <p>Video yako iko live kwenye Feed.</p>
 
         {!savedOk && (
           <p className="ed-warning">
-            Video imechapishwa, lakini kifaa kimeshindwa kuihifadhi kabisa (huenda ni kubwa sana
-            au nafasi imejaa). Itapotea ukirefresh ukurasa.
+            Imehifadhiwa kwa muda tu. Itapotea ukirefresh.
           </p>
         )}
 
         {chosen.length > 0 && (
           <div className="ud-share-now">
-            <p className="ud-share-now-title">Shiriki sasa</p>
+            <p className="ud-share-now-title">Share now</p>
             <div className="ud-share-now-list">
               {chosen.map(({ id, label, Icon }) => (
                 <button key={id} className="ud-share-now-btn" onClick={() => shareNow(id)}>
@@ -795,10 +790,10 @@ function Upload() {
 
         <div className="ed-actions">
           <button className="ed-primary" onClick={() => navigate('/')}>
-            Tazama Feed
+            View Feed
           </button>
           <button className="ed-ghost" onClick={startOver}>
-            Pakia nyingine
+            Post another
           </button>
         </div>
       </div>
@@ -810,11 +805,11 @@ function Upload() {
           <button
             className="ed-icon-btn"
             onClick={() => setStep('details')}
-            aria-label="Rudi"
+            aria-label="Back"
           >
             <BackIcon size={22} />
           </button>
-          <h2 className="ed-title">Jalada</h2>
+          <h2 className="ed-title">Cover</h2>
           <span className="ed-top-space" />
         </div>
 
@@ -835,7 +830,7 @@ function Upload() {
 
         <div className="ed-panel">
           <div className="ed-trim-info">
-            <span>Chagua fremu ya jalada</span>
+            <span>Pick a frame</span>
             <b>{fmt(coverTime - trimStart)}</b>
           </div>
 
@@ -855,13 +850,13 @@ function Upload() {
             className="ed-ghost wide"
             onClick={() => coverImgRef.current && coverImgRef.current.click()}
           >
-            Chagua picha kutoka kwenye simu
+            Choose from gallery
           </button>
 
           {coverError && <p className="ed-cover-error">{coverError}</p>}
 
           <button className="ed-primary" onClick={confirmFrame}>
-            Tumia jalada hili
+            Use this cover
           </button>
         </div>
       </>
@@ -875,18 +870,18 @@ function Upload() {
           <button
             className="ed-icon-btn"
             onClick={() => setStep('edit')}
-            aria-label="Rudi kuhariri"
+            aria-label="Back"
             disabled={publishing}
           >
             <BackIcon size={22} />
           </button>
-          <h2 className="ed-title">Chapisha</h2>
+          <h2 className="ed-title">Post</h2>
           <button
             className="ud-preview-btn"
             onClick={() => setPreview(true)}
             disabled={publishing}
           >
-            Hakiki
+            Preview
           </button>
         </div>
 
@@ -897,22 +892,22 @@ function Upload() {
               className="ed-cover-btn"
               onClick={openCoverStep}
               disabled={publishing}
-              aria-label="Hariri jalada"
+              aria-label="Edit cover"
             >
               {cover ? (
-                <img className="ed-thumb" src={cover} alt="Jalada la video" />
+                <img className="ed-thumb" src={cover} alt="Cover" />
               ) : (
                 <span className="ed-cover-loading">
                   <span className="ed-spinner" />
                 </span>
               )}
-              <span className="ed-cover-label">Jalada</span>
+              <span className="ed-cover-label">Cover</span>
             </button>
 
             <textarea
               ref={captionRef}
               className="ed-textarea"
-              placeholder="Andika maelezo marefu husaidia kupata watazamaji zaidi..."
+              placeholder="Add a description..."
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               maxLength={300}
@@ -932,7 +927,7 @@ function Upload() {
               type="button"
               className="ud-tool"
               onClick={() => insertChar('@')}
-              aria-label="Taja mtu"
+              aria-label="Mention"
             >
               @
             </button>
@@ -957,7 +952,7 @@ function Upload() {
             >
               <span className="ud-share-left">
                 <ShareIcon />
-                <span>Shiriki kwa</span>
+                <span>Share to</span>
               </span>
               <span className="ud-share-right">
                 {pickedApps.length > 0 && (
@@ -995,10 +990,10 @@ function Upload() {
             onClick={() => setStep('edit')}
             disabled={publishing}
           >
-            Rudi
+            Back
           </button>
           <button className="ed-primary" onClick={handlePublish} disabled={publishing}>
-            {publishing ? 'Inachapisha...' : 'Chapisha'}
+            {publishing ? 'Posting...' : 'Post'}
           </button>
         </div>
       </>
@@ -1044,7 +1039,7 @@ function Upload() {
             )}
 
             <div className="ed2-top">
-              <button className="ed2-round" onClick={startOver} aria-label="Rudi kwenye kamera">
+              <button className="ed2-round" onClick={startOver} aria-label="Back to camera">
                 <BackIcon size={22} />
               </button>
 
@@ -1056,7 +1051,7 @@ function Upload() {
                 }}
               >
                 <MusicIcon size={18} />
-                <span>{music ? music.name : 'Ongeza muziki'}</span>
+                <span>{music ? music.name : 'Add music'}</span>
               </button>
 
               <button
@@ -1065,7 +1060,7 @@ function Upload() {
                   e.stopPropagation()
                   setTool('settings')
                 }}
-                aria-label="Mipangilio"
+                aria-label="Settings"
               >
                 <GearIcon size={22} />
               </button>
@@ -1077,42 +1072,42 @@ function Upload() {
                 onClick={() => setTool('trim')}
               >
                 <ScissorsIcon />
-                <span>Punguza</span>
+                <span>Trim</span>
               </button>
               <button className="ed2-tool" onClick={openNewText}>
                 <TextIcon />
-                <span>Maandishi</span>
+                <span>Text</span>
               </button>
               <button
                 className={tool === 'sticker' ? 'ed2-tool on' : 'ed2-tool'}
                 onClick={() => setTool('sticker')}
               >
                 <StickerIcon />
-                <span>Stika</span>
+                <span>Stickers</span>
               </button>
               <button
                 className={tool === 'filter' ? 'ed2-tool on' : 'ed2-tool'}
                 onClick={() => setTool('filter')}
               >
                 <FilterIcon />
-                <span>Filta</span>
+                <span>Filters</span>
               </button>
             </div>
 
             {selected && (
               <div className="ed2-selbar" onClick={(e) => e.stopPropagation()}>
                 {selected.kind === 'text' && (
-                  <button className="ed2-selbtn" onClick={editSelectedText} aria-label="Hariri maandishi">
+                  <button className="ed2-selbtn" onClick={editSelectedText} aria-label="Edit text">
                     <EditIcon />
                   </button>
                 )}
-                <button className="ed2-selbtn" onClick={() => changeSize(0.85)} aria-label="Punguza ukubwa">
+                <button className="ed2-selbtn" onClick={() => changeSize(0.85)} aria-label="Smaller">
                   <MinusIcon />
                 </button>
-                <button className="ed2-selbtn" onClick={() => changeSize(1.18)} aria-label="Kuza">
+                <button className="ed2-selbtn" onClick={() => changeSize(1.18)} aria-label="Bigger">
                   <PlusIcon />
                 </button>
-                <button className="ed2-selbtn danger" onClick={deleteSelected} aria-label="Futa">
+                <button className="ed2-selbtn danger" onClick={deleteSelected} aria-label="Delete">
                   <TrashIcon />
                 </button>
               </div>
@@ -1125,10 +1120,10 @@ function Upload() {
         <div className="ed2-bottom" onClick={(e) => e.stopPropagation()}>
           <button className="ed2-story" onClick={handleStatus} disabled={statusBusy}>
             <Avatar username={me} src={myInfo.avatar} label={myInfo.name} size={26} />
-            {statusBusy ? 'Subiri...' : 'Status yako'}
+            {statusBusy ? 'Wait...' : 'Your Story'}
           </button>
           <button className="ed2-next" onClick={() => setStep('details')}>
-            Endelea
+            Next
           </button>
         </div>
 
@@ -1214,7 +1209,7 @@ function Upload() {
           <button
             className="ud-preview-close"
             onClick={() => setPreview(false)}
-            aria-label="Funga hakiki"
+            aria-label="Close preview"
           >
             <CloseIcon size={20} />
           </button>

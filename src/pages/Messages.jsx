@@ -8,13 +8,13 @@ import '../styles/messages.css'
 
 function timeAgo(ts) {
   const sec = Math.floor((Date.now() - ts) / 1000)
-  if (sec < 60) return 'sasa hivi'
+  if (sec < 60) return 'now'
   const min = Math.floor(sec / 60)
-  if (min < 60) return `dk ${min}`
+  if (min < 60) return `${min}m`
   const hr = Math.floor(min / 60)
-  if (hr < 24) return `saa ${hr}`
+  if (hr < 24) return `${hr}h`
   const day = Math.floor(hr / 24)
-  return `siku ${day}`
+  return `${day}d`
 }
 
 function Messages() {
@@ -42,7 +42,7 @@ function Messages() {
 
   return (
     <div className="messages-wrapper">
-      <h2 className="messages-title">Ujumbe</h2>
+      <h2 className="messages-title">Inbox</h2>
 
       <StatusRow />
 
@@ -51,8 +51,8 @@ function Messages() {
           <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2z" />
           </svg>
-          <p>Hakuna mazungumzo bado.</p>
-          <span>Mfuate mtu kwenye Feed ili aonekane hapa.</span>
+          <p>No messages yet</p>
+          <span>Mfuate mtu ili aonekane hapa.</span>
         </div>
       )}
 
@@ -76,8 +76,8 @@ function Messages() {
               <span className="message-bottom">
                 <span className={item.unread > 0 ? 'message-preview unread' : 'message-preview'}>
                   {item.last
-                    ? `${item.last.from === 'me' ? 'Wewe: ' : ''}${item.last.text}`
-                    : 'Anza mazungumzo'}
+                    ? `${item.last.from === 'me' ? 'You: ' : ''}${item.last.text}`
+                    : 'Say hi 👋'}
                 </span>
                 {item.unread > 0 && (
                   <span className="message-badge">{item.unread}</span>

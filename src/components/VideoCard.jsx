@@ -5,6 +5,7 @@ import CommentsSheet from './CommentsSheet'
 import ShareSheet from './ShareSheet'
 import Avatar from './Avatar'
 import OverlayLayer from './OverlayLayer'
+import FollowButton from './FollowButton'
 import { displayName } from '../utils/displayName'
 import { getFilterCss } from '../utils/videoFilters'
 import { getSound, setSound, subscribeSound } from '../utils/soundStore'
@@ -57,10 +58,9 @@ function CaptionText({ text }) {
 function VideoCard({ video }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { likedIds, toggleLike, comments, followedUsers, toggleFollow } = useVideos()
+  const { likedIds, toggleLike, comments } = useVideos()
   const [showComments, setShowComments] = useState(false)
   const [showShare, setShowShare] = useState(false)
-  const [showCheck, setShowCheck] = useState(false)
   // Ikoni ya katikati: 'play' (imesimama) | 'pause' (inaendelea, inapotea) | null
   const [indicator, setIndicator] = useState(null)
   // Upau wa maendeleo
@@ -75,7 +75,6 @@ function VideoCard({ video }) {
   const videoRef = useRef(null)
   const audioRef = useRef(null)
   const barRef = useRef(null)
-  const checkTimer = useRef(null)
   const indicatorTimer = useRef(null)
   const tapTimer = useRef(null)
   const lastTapRef = useRef(0)
@@ -92,8 +91,6 @@ function VideoCard({ video }) {
   const commentsOff = video.allowComments === false
 
   const isMine = video.username === ME
-  const following = followedUsers.includes(video.username)
-  const showBadge = !isMine && (!following || showCheck)
 
   // Sehemu iliyochaguliwa ya video (kupunguza)
   const trimStart = video.trimStart || 0
@@ -124,7 +121,6 @@ function VideoCard({ video }) {
   // Safisha timer kadi ikiondoka
   useEffect(() => {
     return () => {
-      clearTimeout(checkTimer.current)
       clearTimeout(indicatorTimer.current)
       clearTimeout(tapTimer.current)
     }
@@ -141,14 +137,6 @@ function VideoCard({ video }) {
     }
     if (current === decodeURIComponent(target)) return
     navigate(target)
-  }
-
-  const handleFollow = () => {
-    if (following) return
-    toggleFollow(video.username)
-    setShowCheck(true)
-    clearTimeout(checkTimer.current)
-    checkTimer.current = setTimeout(() => setShowCheck(false), 1200)
   }
 
   // Video ichezwe ikiwa kwenye skrini, isimame ikitoka
@@ -412,9 +400,13 @@ function VideoCard({ video }) {
 
       <div className="video-overlay">
         <div className="video-info">
-          <button className="video-name-btn" onClick={goUser}>
-            <span className="video-name">{name}</span>
-          </button>
+          <div className="video-namerow">
+            <button className="video-name-btn" onClick={goUser}>
+              <span className="video-name">{name}</span>
+            </button>
+
+            {!isMine && <FollowButton username={video.username} size="sm" />}
+          </div>
 
           {caption && (
             <div className={expanded ? 'video-caption open' : 'video-caption'}>
@@ -424,7 +416,7 @@ function VideoCard({ video }) {
                 </p>
               )}
               <button className="video-more" onClick={() => setExpanded(v => !v)}>
-                {expanded ? 'punguza' : 'zaidi'}
+                {expanded ? 'less' : 'more'}
                 <svg
                   viewBox="0 0 24 24"
                   width="14"
@@ -453,7 +445,7 @@ function VideoCard({ video }) {
           onPointerUp={handleBarUp}
           onPointerCancel={handleBarUp}
           role="slider"
-          aria-label="Maendeleo ya video"
+          aria-label="Progress"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={Math.round(progress * 100)}
@@ -471,35 +463,16 @@ function VideoCard({ video }) {
           <button
             className="avatar-hit"
             onClick={goUser}
-            aria-label={`Fungua ukurasa wa ${name}`}
+            aria-label={`Open ${name}`}
           >
             <Avatar username={video.username} size={48} />
           </button>
-
-          {showBadge && (
-            <button
-              className={following ? 'follow-badge done' : 'follow-badge'}
-              onClick={handleFollow}
-              aria-label={following ? 'Unamfuata' : 'Mfuate'}
-            >
-              {following ? (
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              )}
-            </button>
-          )}
         </div>
 
         <button
           className={liked ? 'action-btn liked' : 'action-btn'}
           onClick={() => toggleLike(video.id)}
-          aria-label="Penda video"
+          aria-label="Like"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" width="30" height="30">
             <path d="M12 21s-6.7-4.3-9.5-8.2C.6 9.9 1.4 6.4 4.3 4.9c2.4-1.3 5-.6 6.7 1.4 1.7-2 4.3-2.7 6.7-1.4 2.9 1.5 3.7 5 1.8 7.9C18.7 16.7 12 21 12 21z"/>
@@ -512,7 +485,7 @@ function VideoCard({ video }) {
           onClick={() => {
             if (!commentsOff) setShowComments(true)
           }}
-          aria-label={commentsOff ? 'Maoni yamezimwa' : 'Fungua maoni'}
+          aria-label={commentsOff ? 'Comments off' : 'Comments'}
         >
           <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
             <path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2z"/>
@@ -523,7 +496,7 @@ function VideoCard({ video }) {
         <button
           className="action-btn"
           onClick={() => setShowShare(true)}
-          aria-label="Shiriki video"
+          aria-label="Share"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28">
             <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
@@ -537,7 +510,7 @@ function VideoCard({ video }) {
           <button
             className={sound ? 'sound-btn' : 'sound-btn off'}
             onClick={toggleSound}
-            aria-label={sound ? 'Zima sauti' : 'Washa sauti'}
+            aria-label={sound ? 'Mute' : 'Unmute'}
           >
             {sound ? (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">

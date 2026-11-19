@@ -29,7 +29,7 @@ export function SheetShell({ title, onDone, children }) {
     <div className="ed2-sheet" onClick={(e) => e.stopPropagation()}>
       <div className="ed2-sheet-head">
         <h3>{title}</h3>
-        <button className="ed2-sheet-done" onClick={onDone} aria-label="Tayari">
+        <button className="ed2-sheet-done" onClick={onDone} aria-label="Done">
           <CheckIcon size={18} />
         </button>
       </div>
@@ -69,9 +69,9 @@ export function TrimSheet({
   const clipLength = Math.max(0, trimEnd - trimStart)
 
   return (
-    <SheetShell title="Punguza" onDone={onDone}>
+    <SheetShell title="Trim" onDone={onDone}>
       <div className="ed-trim-info">
-        <span>Muda mpya wa video</span>
+        <span>New length</span>
         <b>
           {fmt(clipLength)} / {fmt(duration)}
         </b>
@@ -87,8 +87,8 @@ export function TrimSheet({
       </div>
 
       <div className="ed-trim-row">
-        <span className="ed-trim-label">Mwanzo</span>
-        <button className="ed-nudge" onClick={() => onStart(trimStart - 1)} aria-label="Rudisha sekunde 1">
+        <span className="ed-trim-label">Start</span>
+        <button className="ed-nudge" onClick={() => onStart(trimStart - 1)} aria-label="Back 1 second">
           −
         </button>
         <input
@@ -100,15 +100,15 @@ export function TrimSheet({
           value={trimStart}
           onChange={(e) => onStart(Number(e.target.value))}
         />
-        <button className="ed-nudge" onClick={() => onStart(trimStart + 1)} aria-label="Songa sekunde 1">
+        <button className="ed-nudge" onClick={() => onStart(trimStart + 1)} aria-label="Forward 1 second">
           +
         </button>
         <b className="ed-time">{fmt(trimStart)}</b>
       </div>
 
       <div className="ed-trim-row">
-        <span className="ed-trim-label">Mwisho</span>
-        <button className="ed-nudge" onClick={() => onEnd(trimEnd - 1)} aria-label="Rudisha sekunde 1">
+        <span className="ed-trim-label">End</span>
+        <button className="ed-nudge" onClick={() => onEnd(trimEnd - 1)} aria-label="Back 1 second">
           −
         </button>
         <input
@@ -120,7 +120,7 @@ export function TrimSheet({
           value={trimEnd}
           onChange={(e) => onEnd(Number(e.target.value))}
         />
-        <button className="ed-nudge" onClick={() => onEnd(trimEnd + 1)} aria-label="Songa sekunde 1">
+        <button className="ed-nudge" onClick={() => onEnd(trimEnd + 1)} aria-label="Forward 1 second">
           +
         </button>
         <b className="ed-time">{fmt(trimEnd)}</b>
@@ -131,7 +131,7 @@ export function TrimSheet({
 
 export function FilterSheet({ filterId, onChange, onDone }) {
   return (
-    <SheetShell title="Filta" onDone={onDone}>
+    <SheetShell title="Filters" onDone={onDone}>
       <div className="ed-filters">
         {FILTERS.map(f => (
           <button
@@ -150,7 +150,7 @@ export function FilterSheet({ filterId, onChange, onDone }) {
 
 export function StickerSheet({ onPick, onDone }) {
   return (
-    <SheetShell title="Stika" onDone={onDone}>
+    <SheetShell title="Stickers" onDone={onDone}>
       <div className="ed2-emoji-grid">
         {STICKERS.map(emoji => (
           <button key={emoji} className="ed2-emoji" onClick={() => onPick(emoji)}>
@@ -182,7 +182,7 @@ export function MusicSheet({
   }
 
   return (
-    <SheetShell title="Muziki" onDone={onDone}>
+    <SheetShell title="Music" onDone={onDone}>
       <input
         ref={inputRef}
         type="file"
@@ -198,16 +198,16 @@ export function MusicSheet({
           </span>
           <span className="ed2-music-name">{music.name}</span>
           <button className="ed2-music-btn" onClick={() => inputRef.current && inputRef.current.click()}>
-            Badilisha
+            Change
           </button>
-          <button className="ed2-music-remove" onClick={onRemove} aria-label="Ondoa muziki">
+          <button className="ed2-music-remove" onClick={onRemove} aria-label="Remove music">
             <TrashIcon size={18} />
           </button>
         </div>
       ) : (
         <button className="ed2-pick" onClick={() => inputRef.current && inputRef.current.click()}>
           <MusicIcon size={22} />
-          Chagua muziki kutoka kwenye simu
+          Choose from phone
         </button>
       )}
 
@@ -215,34 +215,30 @@ export function MusicSheet({
 
       {music && (
         <>
-          <SliderRow label="Muziki" value={musicVol} onChange={onMusicVol} />
-          <SliderRow label="Sauti ya video" value={videoVol} onChange={onVideoVol} />
+          <SliderRow label="Music" value={musicVol} onChange={onMusicVol} />
+          <SliderRow label="Original sound" value={videoVol} onChange={onVideoVol} />
         </>
       )}
-
-      <p className="ed2-sheet-hint">
-        Tumia muziki ulio na ruhusa ya kuutumia. Wimbo unaanza na video na unarudia ikiwa ni mfupi.
-      </p>
     </SheetShell>
   )
 }
 
 export function SettingsSheet({ allowComments, onAllowComments, videoVol, onVideoVol, onDone }) {
   return (
-    <SheetShell title="Mipangilio" onDone={onDone}>
+    <SheetShell title="Settings" onDone={onDone}>
       <div className="ed2-setting-row">
-        <span>Ruhusu maoni</span>
+        <span>Allow comments</span>
         <button
           type="button"
           className={allowComments ? 'ed-switch on' : 'ed-switch'}
           onClick={() => onAllowComments(!allowComments)}
           role="switch"
           aria-checked={allowComments}
-          aria-label="Ruhusu maoni"
+          aria-label="Allow comments"
         />
       </div>
 
-      <SliderRow label="Sauti ya video" value={videoVol} onChange={onVideoVol} />
+      <SliderRow label="Video sound" value={videoVol} onChange={onVideoVol} />
     </SheetShell>
   )
 }
@@ -254,10 +250,10 @@ export function TextEditor({ draft, onChange, onCancel, onDone }) {
     <div className="ed2-textmodal">
       <div className="ed2-textmodal-top">
         <button className="ed2-text-btn" onClick={onCancel}>
-          Ghairi
+          Cancel
         </button>
         <button className="ed2-text-btn primary" onClick={onDone}>
-          Tayari
+          Done
         </button>
       </div>
 
@@ -270,7 +266,7 @@ export function TextEditor({ draft, onChange, onCancel, onDone }) {
           }}
           value={draft.text}
           onChange={(e) => onChange({ text: e.target.value })}
-          placeholder="Andika..."
+          placeholder="Type something..."
           maxLength={120}
           rows={3}
           autoFocus
@@ -281,7 +277,7 @@ export function TextEditor({ draft, onChange, onCancel, onDone }) {
         <button
           className={boxed ? 'ed2-box-btn on' : 'ed2-box-btn'}
           onClick={() => onChange({ box: !boxed })}
-          aria-label="Mandhari ya maandishi"
+          aria-label="Text background"
         >
           <BoxTextIcon />
         </button>
@@ -293,7 +289,7 @@ export function TextEditor({ draft, onChange, onCancel, onDone }) {
               className={draft.color === c ? 'ed2-color active' : 'ed2-color'}
               style={{ background: c }}
               onClick={() => onChange({ color: c })}
-              aria-label={`Rangi ${c}`}
+              aria-label={`Color ${c}`}
             />
           ))}
         </div>
